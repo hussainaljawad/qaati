@@ -5,13 +5,9 @@
 
 ---
 
-## ١) قاعدة بيانات — Neon
+## ١) قاعدة البيانات
 
-1. أنشئ حساباً على <https://neon.tech> ثم مشروعاً جديداً (اختر منطقة قريبة، مثل `eu-central-1`).
-2. من صفحة المشروع اضغط **Connect** وانسخ رابطين:
-   - **Pooled connection** → سيكون `DATABASE_URL`
-   - **Direct connection** → سيكون `DIRECT_URL` (يُستخدم للـ migrations)
-   - كلاهما ينتهي بـ `?sslmode=require`.
+تُنشأ من داخل Vercel نفسه (تكامل Neon) — لا حاجة لتسجيل منفصل. الخطوات في القسم ٣.
 
 ---
 
@@ -33,14 +29,13 @@ gh repo create qaati --private --source=. --push
 
 ## ٣) Vercel
 
-1. أنشئ حساباً على <https://vercel.com> واربطه بحساب GitHub.
-2. **Add New → Project** واختر مستودع `qaati`. Vercel يكتشف Next.js تلقائياً.
-3. في **Environment Variables** أضف (لكل البيئات Production/Preview/Development):
+1. **Add New → Project** واختر مستودع `qaati`. Vercel يكتشف Next.js تلقائياً.
+2. **Storage → Create Database → Neon** — يضيف `POSTGRES_PRISMA_URL` و
+   `POSTGRES_URL_NON_POOLING` وبقية متغيّرات القاعدة تلقائياً لكل البيئات.
+3. في **Environment Variables** أضف يدوياً فقط:
 
    | المفتاح | القيمة |
    |---|---|
-   | `DATABASE_URL` | رابط Neon المُجمّع (Pooled) |
-   | `DIRECT_URL` | رابط Neon المباشر (Direct) |
    | `AUTH_SECRET` | ولّده بـ `openssl rand -base64 32` |
    | `PLATFORM_ADMIN_EMAIL` | بريدك (لدخول `/platform`) |
    | `PLATFORM_ADMIN_PASSWORD` | كلمة مرور قوية |
