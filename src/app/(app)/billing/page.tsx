@@ -2,7 +2,7 @@ import Link from "next/link";
 import { getLocale, getTranslations } from "next-intl/server";
 import { requireUser } from "@/lib/auth/guards";
 import { effectiveStatus, trialDaysLeft } from "@/lib/billing/subscription";
-import { STANDARD_PLAN } from "@/lib/billing/plans";
+import { getEffectivePlan, getPlatformSettings } from "@/lib/platform/settings";
 import { formatDate } from "@/lib/format";
 import type { Locale } from "@/i18n/config";
 import { MashrabiyaHeader } from "@/components/app/MashrabiyaHeader";
@@ -20,6 +20,19 @@ export default async function BillingPage() {
   const status = effectiveStatus(session.subscription);
   const daysLeft = trialDaysLeft(session.subscription);
   const isActive = status === "ACTIVE";
+
+  const [plan, ps] = await Promise.all([
+    getEffectivePlan(),
+    getPlatformSettings(),
+  ]);
+  const bank = {
+    bankName: ps.bankName,
+    bankAccountName: ps.bankAccountName,
+    bankIban: ps.bankIban,
+    bankAccountNumber: ps.bankAccountNumber,
+    benefitNumber: ps.benefitNumber,
+    paymentNote: ps.paymentNote,
+  };
 
   return (
     <>
@@ -69,10 +82,10 @@ export default async function BillingPage() {
         {!isActive ? (
           <div className="rounded-[var(--radius-card)] border border-line bg-paper p-4">
             <p className="font-kufi text-base font-bold text-ink">
-              {locale === "ar" ? STANDARD_PLAN.nameAr : STANDARD_PLAN.nameEn}
+              {locale === "ar" ? plan.nameAr : plan.nameEn}
             </p>
             <ul className="my-3 space-y-1.5 text-sm text-ink-soft">
-              {STANDARD_PLAN.features.map((f) => (
+              {plan.features.map((f) => (
                 <li key={f.en} className="flex gap-2">
                   <span className="text-gold">◆</span>
                   {locale === "ar" ? f.ar : f.en}
@@ -80,8 +93,9 @@ export default async function BillingPage() {
               ))}
             </ul>
             <SubscribePanel
-              priceMonthlyFils={STANDARD_PLAN.priceFilsMonthly}
-              priceYearlyFils={STANDARD_PLAN.priceFilsYearly}
+              priceMonthlyFils={plan.priceFilsMonthly}
+              priceYearlyFils={plan.priceFilsYearly}
+              bank={bank}
             />
           </div>
         ) : null}

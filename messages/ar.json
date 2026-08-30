@@ -116,7 +116,12 @@
     "requestSent": "وصلنا طلبك — بنتواصل معك قريب لتفعيل الاشتراك.",
     "statusActive": "الاشتراك مُفعّل",
     "renewsOn": "يتجدد في {date}",
-    "cancel": "إلغاء التجديد"
+    "cancel": "إلغاء التجديد",
+    "bankTransferTitle": "للتحويل البنكي",
+    "bankName": "البنك",
+    "bankAccountName": "صاحب الحساب",
+    "bankAccountNumber": "رقم الحساب",
+    "benefitNumber": "بنفت"
   },
   "dashboard": {
     "title": "لوحة إدارة الحجوزات",

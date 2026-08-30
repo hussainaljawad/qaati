@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { Settings } from "lucide-react";
 import { requirePlatform } from "@/lib/platform/auth";
 import { listSubscribers, platformDashboard } from "@/lib/platform/queries";
 import { platformLogoutAction } from "@/app/actions/platform";
@@ -48,14 +49,22 @@ export default async function PlatformHome({
             {session.email}
           </p>
         </div>
-        <form action={platformLogoutAction}>
-          <button
-            type="submit"
-            className="rounded-lg border border-line bg-paper px-3 py-1.5 text-xs font-semibold text-ink-soft"
+        <div className="flex items-center gap-2">
+          <Link
+            href="/platform/settings"
+            className="flex items-center gap-1.5 rounded-lg border border-line bg-paper px-3 py-1.5 text-xs font-semibold text-ink"
           >
-            خروج
-          </button>
-        </form>
+            <Settings className="size-3.5" /> الإعدادات
+          </Link>
+          <form action={platformLogoutAction}>
+            <button
+              type="submit"
+              className="rounded-lg border border-line bg-paper px-3 py-1.5 text-xs font-semibold text-ink-soft"
+            >
+              خروج
+            </button>
+          </form>
+        </div>
       </header>
 
       {/* مؤشرات رئيسية */}

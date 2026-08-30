@@ -581,3 +581,26 @@ model BookingCounter {
 
   @@map("booking_counters")
 }
+
+// ---------------------------------------------------------------------------
+// إعدادات المنصّة (لوحة المشغّل) — صف واحد (singleton)
+// ---------------------------------------------------------------------------
+
+model PlatformSettings {
+  id                String   @id @default("singleton")
+  planNameAr        String   @default("باقة قاعتي") @map("plan_name_ar")
+  planNameEn        String   @default("Qaati Plan") @map("plan_name_en")
+  priceMonthlyFils  Int      @default(12000) @map("price_monthly_fils")
+  priceYearlyFils   Int      @default(120000) @map("price_yearly_fils")
+  currency          String   @default("BHD")
+  bankName          String?  @map("bank_name")
+  bankAccountName   String?  @map("bank_account_name")
+  bankIban          String?  @map("bank_iban")
+  bankAccountNumber String?  @map("bank_account_number")
+  benefitNumber     String?  @map("benefit_number")
+  paymentNote       String?  @map("payment_note")
+  createdAt         DateTime @default(now()) @map("created_at")
+  updatedAt         DateTime @updatedAt @map("updated_at")
+
+  @@map("platform_settings")
+}

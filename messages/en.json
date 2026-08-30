@@ -116,7 +116,12 @@
     "requestSent": "We got your request — we'll reach out soon to activate your subscription.",
     "statusActive": "Subscription active",
     "renewsOn": "Renews on {date}",
-    "cancel": "Cancel renewal"
+    "cancel": "Cancel renewal",
+    "bankTransferTitle": "Bank transfer details",
+    "bankName": "Bank",
+    "bankAccountName": "Account name",
+    "bankAccountNumber": "Account number",
+    "benefitNumber": "Benefit"
   },
   "dashboard": {
     "title": "Bookings dashboard",

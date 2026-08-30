@@ -40,6 +40,25 @@ export const platformLoginSchema = z.object({
   password: z.string().min(1, "اكتب كلمة المرور"),
 });
 
+export const platformSettingsSchema = z.object({
+  planNameAr: z.string().trim().min(2, "اكتب اسم الباقة"),
+  planNameEn: z.string().trim().min(2, "English plan name"),
+  priceMonthlyBhd: z.preprocess(
+    (v) => (v === "" || v == null ? undefined : Number(v)),
+    z.number().min(0).max(100_000),
+  ),
+  priceYearlyBhd: z.preprocess(
+    (v) => (v === "" || v == null ? undefined : Number(v)),
+    z.number().min(0).max(1_000_000),
+  ),
+  bankName: optionalText,
+  bankAccountName: optionalText,
+  bankIban: optionalText,
+  bankAccountNumber: optionalText,
+  benefitNumber: optionalText,
+  paymentNote: optionalText,
+});
+
 export const onboardingHallSchema = z.object({
   name: z.string().trim().min(2, "اكتب اسم القاعة"),
   section: z.enum(["MEN", "WOMEN", "MIXED"]),

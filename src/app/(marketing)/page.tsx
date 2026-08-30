@@ -1,13 +1,15 @@
 import Link from "next/link";
 import { getLocale, getTranslations } from "next-intl/server";
 import { CalendarDays, MessageCircle, ReceiptText, Users } from "lucide-react";
-import { STANDARD_PLAN, TRIAL_DAYS } from "@/lib/billing/plans";
+import { TRIAL_DAYS } from "@/lib/billing/plans";
+import { getEffectivePlan } from "@/lib/platform/settings";
 import { formatMoney } from "@/lib/money";
 import type { Locale } from "@/i18n/config";
 
 export default async function LandingPage() {
   const t = await getTranslations("marketing");
   const locale = (await getLocale()) as Locale;
+  const plan = await getEffectivePlan();
 
   const features = [
     { icon: CalendarDays, title: t("feature1Title"), body: t("feature1Body") },
@@ -75,11 +77,11 @@ export default async function LandingPage() {
         </h2>
         <div className="mx-auto max-w-sm rounded-[var(--radius-card)] border-2 border-gold bg-paper p-6 text-center">
           <p className="font-kufi text-lg font-bold text-ink">
-            {locale === "ar" ? STANDARD_PLAN.nameAr : STANDARD_PLAN.nameEn}
+            {locale === "ar" ? plan.nameAr : plan.nameEn}
           </p>
           <p className="mt-3">
             <span className="font-kufi text-3xl font-bold text-ink">
-              {formatMoney(STANDARD_PLAN.priceFilsMonthly, locale, {
+              {formatMoney(plan.priceFilsMonthly, locale, {
                 compact: true,
               })}
             </span>
@@ -87,7 +89,7 @@ export default async function LandingPage() {
           </p>
           <p className="mt-1 text-xs text-olive">{t("yearlyNote")}</p>
           <ul className="mt-5 space-y-2 text-start text-sm text-ink-soft">
-            {STANDARD_PLAN.features.map((f) => (
+            {plan.features.map((f) => (
               <li key={f.en} className="flex gap-2">
                 <span className="text-gold">◆</span>
                 {locale === "ar" ? f.ar : f.en}

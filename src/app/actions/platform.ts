@@ -2,8 +2,10 @@
 
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
+import { db } from "@/lib/db";
+import { bhdToFils } from "@/lib/money";
 import { fail, fromZod, type FormState } from "@/lib/forms";
-import { platformLoginSchema } from "@/lib/validation";
+import { platformLoginSchema, platformSettingsSchema } from "@/lib/validation";
 import {
   checkPlatformCredentials,
   createPlatformCookie,
@@ -66,4 +68,49 @@ export async function expireOrgAction(formData: FormData) {
   await expireSubscription(orgId);
   revalidatePath("/platform");
   revalidatePath(`/platform/subscribers/${orgId}`);
+}
+
+export async function updatePlatformSettingsAction(
+  _prev: FormState,
+  formData: FormData,
+): Promise<FormState> {
+  await requirePlatform();
+  const parsed = platformSettingsSchema.safeParse(Object.fromEntries(formData));
+  if (!parsed.success) return fromZod(parsed.error);
+  const d = parsed.data;
+
+  await db.platformSettings.upsert({
+    where: { id: "singleton" },
+    create: {
+      id: "singleton",
+      planNameAr: d.planNameAr,
+      planNameEn: d.planNameEn,
+      priceMonthlyFils: bhdToFils(d.priceMonthlyBhd),
+      priceYearlyFils: bhdToFils(d.priceYearlyBhd),
+      bankName: d.bankName ?? null,
+      bankAccountName: d.bankAccountName ?? null,
+      bankIban: d.bankIban ?? null,
+      bankAccountNumber: d.bankAccountNumber ?? null,
+      benefitNumber: d.benefitNumber ?? null,
+      paymentNote: d.paymentNote ?? null,
+    },
+    update: {
+      planNameAr: d.planNameAr,
+      planNameEn: d.planNameEn,
+      priceMonthlyFils: bhdToFils(d.priceMonthlyBhd),
+      priceYearlyFils: bhdToFils(d.priceYearlyBhd),
+      bankName: d.bankName ?? null,
+      bankAccountName: d.bankAccountName ?? null,
+      bankIban: d.bankIban ?? null,
+      bankAccountNumber: d.bankAccountNumber ?? null,
+      benefitNumber: d.benefitNumber ?? null,
+      paymentNote: d.paymentNote ?? null,
+    },
+  });
+
+  revalidatePath("/platform/settings");
+  revalidatePath("/platform");
+  revalidatePath("/billing");
+  revalidatePath("/");
+  return { ok: true, message: "تم الحفظ" };
 }

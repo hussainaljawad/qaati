@@ -1,6 +1,6 @@
 import { db } from "@/lib/db";
 import { effectiveStatus, trialDaysLeft } from "@/lib/billing/subscription";
-import { STANDARD_PLAN } from "@/lib/billing/plans";
+import { getPlatformSettings } from "@/lib/platform/settings";
 
 export type SubStatus = ReturnType<typeof effectiveStatus>;
 
@@ -59,6 +59,7 @@ function isYearly(start: Date | null, end: Date | null): boolean {
 
 export async function platformDashboard() {
   const now = new Date();
+  const ps = await getPlatformSettings();
   const monthStart = new Date(
     Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), 1),
   );
@@ -111,8 +112,8 @@ export async function platformDashboard() {
     if (st === "ACTIVE") {
       counts.active++;
       mrrFils += isYearly(s.currentPeriodStart, s.currentPeriodEnd)
-        ? Math.round(STANDARD_PLAN.priceFilsYearly / 12)
-        : STANDARD_PLAN.priceFilsMonthly;
+        ? Math.round(ps.priceYearlyFils / 12)
+        : ps.priceMonthlyFils;
     } else if (st === "TRIALING") {
       counts.trialing++;
       const days = trialDaysLeft(s, now);
