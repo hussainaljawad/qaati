@@ -1,0 +1,581 @@
+// قاعتي — مخطط قاعدة البيانات
+// كل الجداول مقيّدة بـ organization_id (عزل المستأجرين / tenants).
+// المبالغ المالية كلها أعداد صحيحة بالفلس: ١ دينار بحريني = ١٠٠٠ فلس.
+
+generator client {
+  provider      = "prisma-client-js"
+  // "native" للتطوير محلياً · "rhel-openssl-3.0.x" لبيئة Vercel/AWS Lambda
+  binaryTargets = ["native", "rhel-openssl-3.0.x"]
+}
+
+datasource db {
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
+  directUrl = env("DIRECT_URL")
+}
+
+// ---------------------------------------------------------------------------
+// المنشأة والمستخدمون والاشتراك
+// ---------------------------------------------------------------------------
+
+model Organization {
+  id            String    @id @default(cuid())
+  name          String
+  slug          String    @unique
+  vatNumber     String?   @map("vat_number")
+  crNumber      String?   @map("cr_number")
+  address       String?
+  phone         String?
+  logoUrl       String?   @map("logo_url")
+  currency      String    @default("BHD")
+  vatRate       Decimal   @default("10.0") @map("vat_rate") @db.Decimal(5, 2)
+  localeDefault String    @default("ar") @map("locale_default")
+  onboardedAt   DateTime? @map("onboarded_at")
+  createdAt     DateTime  @default(now()) @map("created_at")
+  updatedAt     DateTime  @updatedAt @map("updated_at")
+
+  users              User[]
+  halls              Hall[]
+  clients            Client[]
+  bookings           Booking[]
+  waitlistEntries    WaitlistEntry[]
+  contracts          Contract[]
+  payments           Payment[]
+  invoices           Invoice[]
+  vendors            Vendor[]
+  bookingVendors     BookingVendor[]
+  communicationLogs  CommunicationLog[]
+  reminders          Reminder[]
+  subscription       Subscription?
+  subscriptionEvents SubscriptionEvent[]
+  invoiceCounter     InvoiceCounter?
+  bookingCounter     BookingCounter?
+
+  @@map("organizations")
+}
+
+enum UserRole {
+  ADMIN
+  STAFF
+}
+
+model User {
+  id             String    @id @default(cuid())
+  organizationId String    @map("organization_id")
+  name           String
+  email          String    @unique
+  passwordHash   String    @map("password_hash")
+  role           UserRole  @default(STAFF)
+  phone          String?
+  isActive       Boolean   @default(true) @map("is_active")
+  lastLoginAt    DateTime? @map("last_login_at")
+  createdAt      DateTime  @default(now()) @map("created_at")
+  updatedAt      DateTime  @updatedAt @map("updated_at")
+
+  organization      Organization       @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  createdBookings   Booking[]          @relation("BookingCreatedBy")
+  recordedPayments  Payment[]          @relation("PaymentRecordedBy")
+  communicationLogs CommunicationLog[]
+
+  @@index([organizationId])
+  @@map("users")
+}
+
+enum SubscriptionStatus {
+  TRIALING
+  ACTIVE
+  PAST_DUE
+  CANCELLED
+  EXPIRED
+}
+
+model Subscription {
+  id                     String             @id @default(cuid())
+  organizationId         String             @unique @map("organization_id")
+  plan                   String             @default("standard")
+  status                 SubscriptionStatus @default(TRIALING)
+  trialEndsAt            DateTime?          @map("trial_ends_at")
+  currentPeriodStart     DateTime?          @map("current_period_start")
+  currentPeriodEnd       DateTime?          @map("current_period_end")
+  cancelAtPeriodEnd      Boolean            @default(false) @map("cancel_at_period_end")
+  provider               String             @default("manual")
+  providerCustomerId     String?            @map("provider_customer_id")
+  providerSubscriptionId String?            @map("provider_subscription_id")
+  createdAt              DateTime           @default(now()) @map("created_at")
+  updatedAt              DateTime           @updatedAt @map("updated_at")
+
+  organization Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+
+  @@map("subscriptions")
+}
+
+enum SubscriptionEventType {
+  TRIAL_STARTED
+  REQUESTED
+  ACTIVATED
+  RENEWED
+  PAST_DUE
+  CANCELLED
+  EXPIRED
+  REACTIVATED
+}
+
+model SubscriptionEvent {
+  id             String                @id @default(cuid())
+  organizationId String                @map("organization_id")
+  type           SubscriptionEventType
+  note           String?
+  createdAt      DateTime              @default(now()) @map("created_at")
+
+  organization Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+
+  @@index([organizationId])
+  @@map("subscription_events")
+}
+
+// ---------------------------------------------------------------------------
+// القاعات
+// ---------------------------------------------------------------------------
+
+enum HallSection {
+  MEN
+  WOMEN
+  MIXED
+}
+
+model Hall {
+  id               String      @id @default(cuid())
+  organizationId   String      @map("organization_id")
+  name             String
+  nameEn           String?     @map("name_en")
+  section          HallSection @default(MIXED)
+  capacitySeated   Int?        @map("capacity_seated")
+  capacityStanding Int?        @map("capacity_standing")
+  basePriceFils    Int         @default(0) @map("base_price_fils")
+  color            String      @default("#9C3A48")
+  notes            String?
+  isActive         Boolean     @default(true) @map("is_active")
+  sortOrder        Int         @default(0) @map("sort_order")
+  createdAt        DateTime    @default(now()) @map("created_at")
+  updatedAt        DateTime    @updatedAt @map("updated_at")
+
+  organization Organization    @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  bookings     Booking[]
+  waitlist     WaitlistEntry[]
+
+  @@index([organizationId])
+  @@map("halls")
+}
+
+// ---------------------------------------------------------------------------
+// العملاء
+// ---------------------------------------------------------------------------
+
+model Client {
+  id             String   @id @default(cuid())
+  organizationId String   @map("organization_id")
+  name           String
+  phone          String
+  altPhone       String?  @map("alt_phone")
+  email          String?
+  nationalId     String?  @map("national_id")
+  notes          String?
+  preferences    String?
+  tags           String[] @default([])
+  createdAt      DateTime @default(now()) @map("created_at")
+  updatedAt      DateTime @updatedAt @map("updated_at")
+
+  organization      Organization       @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  bookings          Booking[]
+  waitlistEntries   WaitlistEntry[]
+  invoices          Invoice[]
+  communicationLogs CommunicationLog[]
+
+  @@index([organizationId])
+  @@index([organizationId, phone])
+  @@map("clients")
+}
+
+// ---------------------------------------------------------------------------
+// الحجوزات
+// ---------------------------------------------------------------------------
+
+enum BookingStatus {
+  HOLD // مبدئي
+  CONFIRMED // مؤكد
+  CANCELLED // ملغي
+  COMPLETED // مكتمل
+}
+
+model Booking {
+  id                 String        @id @default(cuid())
+  organizationId     String        @map("organization_id")
+  hallId             String        @map("hall_id")
+  clientId           String        @map("client_id")
+  reference          String
+  eventType          String        @map("event_type")
+  eventDate          DateTime      @map("event_date") @db.Date
+  startTime          String?       @map("start_time")
+  endTime            String?       @map("end_time")
+  status             BookingStatus @default(HOLD)
+  holdExpiresAt      DateTime?     @map("hold_expires_at")
+  guestsCount        Int?          @map("guests_count")
+  totalAmountFils    Int           @default(0) @map("total_amount_fils")
+  discountFils       Int           @default(0) @map("discount_fils")
+  vatInclusive       Boolean       @default(true) @map("vat_inclusive")
+  terms              String?
+  notes              String?
+  createdById        String?       @map("created_by_id")
+  cancelledAt        DateTime?     @map("cancelled_at")
+  cancellationReason String?       @map("cancellation_reason")
+  createdAt          DateTime      @default(now()) @map("created_at")
+  updatedAt          DateTime      @updatedAt @map("updated_at")
+
+  organization      Organization       @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  hall              Hall               @relation(fields: [hallId], references: [id], onDelete: Restrict)
+  client            Client             @relation(fields: [clientId], references: [id], onDelete: Restrict)
+  createdBy         User?              @relation("BookingCreatedBy", fields: [createdById], references: [id], onDelete: SetNull)
+  contract          Contract?
+  payments          Payment[]
+  invoices          Invoice[]
+  bookingVendors    BookingVendor[]
+  communicationLogs CommunicationLog[]
+  reminders         Reminder[]
+
+  @@unique([organizationId, reference])
+  @@index([organizationId])
+  @@index([organizationId, eventDate])
+  @@index([hallId, eventDate])
+  @@map("bookings")
+}
+
+enum WaitlistStatus {
+  WAITING
+  OFFERED
+  CONVERTED
+  EXPIRED
+  CANCELLED
+}
+
+model WaitlistEntry {
+  id             String         @id @default(cuid())
+  organizationId String         @map("organization_id")
+  clientId       String?        @map("client_id")
+  contactName    String?        @map("contact_name")
+  contactPhone   String?        @map("contact_phone")
+  hallId         String?        @map("hall_id")
+  requestedDate  DateTime       @map("requested_date") @db.Date
+  flexible       Boolean        @default(false)
+  notes          String?
+  status         WaitlistStatus @default(WAITING)
+  createdAt      DateTime       @default(now()) @map("created_at")
+  updatedAt      DateTime       @updatedAt @map("updated_at")
+
+  organization Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  client       Client?      @relation(fields: [clientId], references: [id], onDelete: SetNull)
+  hall         Hall?        @relation(fields: [hallId], references: [id], onDelete: SetNull)
+
+  @@index([organizationId])
+  @@index([organizationId, requestedDate])
+  @@map("waitlist_entries")
+}
+
+// ---------------------------------------------------------------------------
+// العقود
+// ---------------------------------------------------------------------------
+
+model Contract {
+  id              String    @id @default(cuid())
+  organizationId  String    @map("organization_id")
+  bookingId       String    @unique @map("booking_id")
+  contractNumber  String    @map("contract_number")
+  templateVersion String    @default("v1") @map("template_version")
+  bodySnapshot    Json      @map("body_snapshot")
+  signedAt        DateTime? @map("signed_at")
+  signedByName    String?   @map("signed_by_name")
+  pdfUrl          String?   @map("pdf_url")
+  createdAt       DateTime  @default(now()) @map("created_at")
+  updatedAt       DateTime  @updatedAt @map("updated_at")
+
+  organization Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  booking      Booking      @relation(fields: [bookingId], references: [id], onDelete: Cascade)
+
+  @@unique([organizationId, contractNumber])
+  @@index([organizationId])
+  @@map("contracts")
+}
+
+// ---------------------------------------------------------------------------
+// المدفوعات (خطة الدفع + الدفعات الفعلية)
+// ---------------------------------------------------------------------------
+
+enum PaymentKind {
+  DEPOSIT // عربون
+  MILESTONE // دفعة وسط
+  FINAL // تسديد نهائي
+  REFUND // استرجاع
+  OTHER
+}
+
+enum PaymentMethod {
+  CASH
+  BANK_TRANSFER
+  BENEFIT
+  BENEFITPAY
+  CHEQUE
+  CARD
+  OTHER
+}
+
+enum PaymentStatus {
+  DUE
+  PAID
+  OVERDUE
+  WAIVED
+}
+
+model Payment {
+  id             String         @id @default(cuid())
+  organizationId String         @map("organization_id")
+  bookingId      String         @map("booking_id")
+  kind           PaymentKind    @default(DEPOSIT)
+  amountFils     Int            @map("amount_fils")
+  dueDate        DateTime?      @map("due_date") @db.Date
+  paidAt         DateTime?      @map("paid_at")
+  method         PaymentMethod?
+  status         PaymentStatus  @default(DUE)
+  reference      String?
+  note           String?
+  provider       String         @default("manual")
+  providerRef    String?        @map("provider_ref")
+  recordedById   String?        @map("recorded_by_id")
+  createdAt      DateTime       @default(now()) @map("created_at")
+  updatedAt      DateTime       @updatedAt @map("updated_at")
+
+  organization Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  booking      Booking      @relation(fields: [bookingId], references: [id], onDelete: Cascade)
+  recordedBy   User?        @relation("PaymentRecordedBy", fields: [recordedById], references: [id], onDelete: SetNull)
+
+  @@index([organizationId])
+  @@index([bookingId])
+  @@index([organizationId, status])
+  @@map("payments")
+}
+
+// ---------------------------------------------------------------------------
+// الفواتير الضريبية
+// ---------------------------------------------------------------------------
+
+enum InvoiceStatus {
+  DRAFT
+  ISSUED
+  PAID
+  VOID
+}
+
+model Invoice {
+  id             String        @id @default(cuid())
+  organizationId String        @map("organization_id")
+  bookingId      String?       @map("booking_id")
+  clientId       String?       @map("client_id")
+  invoiceNumber  String        @map("invoice_number")
+  issueDate      DateTime      @default(now()) @map("issue_date") @db.Date
+  dueDate        DateTime?     @map("due_date") @db.Date
+  currency       String        @default("BHD")
+  subtotalFils   Int           @map("subtotal_fils")
+  vatRate        Decimal       @map("vat_rate") @db.Decimal(5, 2)
+  vatFils        Int           @map("vat_fils")
+  totalFils      Int           @map("total_fils")
+  status         InvoiceStatus @default(DRAFT)
+  sellerSnapshot Json          @map("seller_snapshot")
+  buyerSnapshot  Json          @map("buyer_snapshot")
+  notes          String?
+  pdfUrl         String?       @map("pdf_url")
+  createdAt      DateTime      @default(now()) @map("created_at")
+  updatedAt      DateTime      @updatedAt @map("updated_at")
+
+  organization Organization      @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  booking      Booking?          @relation(fields: [bookingId], references: [id], onDelete: SetNull)
+  client       Client?           @relation(fields: [clientId], references: [id], onDelete: SetNull)
+  lineItems    InvoiceLineItem[]
+
+  @@unique([organizationId, invoiceNumber])
+  @@index([organizationId])
+  @@index([organizationId, status])
+  @@map("invoices")
+}
+
+model InvoiceLineItem {
+  id            String  @id @default(cuid())
+  invoiceId     String  @map("invoice_id")
+  description   String
+  quantity      Decimal @default("1") @db.Decimal(10, 2)
+  unitPriceFils Int     @map("unit_price_fils")
+  amountFils    Int     @map("amount_fils")
+  vatRate       Decimal @map("vat_rate") @db.Decimal(5, 2)
+
+  invoice Invoice @relation(fields: [invoiceId], references: [id], onDelete: Cascade)
+
+  @@index([invoiceId])
+  @@map("invoice_line_items")
+}
+
+// ---------------------------------------------------------------------------
+// الموردون
+// ---------------------------------------------------------------------------
+
+enum VendorCategory {
+  CATERING // كيترينج
+  PHOTOGRAPHY // تصوير
+  DECOR // ديكور
+  DJ // دي جي
+  FLOWERS // ورد
+  LIGHTING // إضاءة
+  SECURITY // أمن
+  OTHER
+}
+
+enum VendorConfirmationStatus {
+  PENDING // بانتظار
+  CONFIRMED // مؤكد
+  DECLINED // معتذر
+}
+
+model Vendor {
+  id             String         @id @default(cuid())
+  organizationId String         @map("organization_id")
+  name           String
+  category       VendorCategory @default(OTHER)
+  phone          String?
+  contactPerson  String?        @map("contact_person")
+  notes          String?
+  createdAt      DateTime       @default(now()) @map("created_at")
+  updatedAt      DateTime       @updatedAt @map("updated_at")
+
+  organization   Organization    @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  bookingVendors BookingVendor[]
+
+  @@index([organizationId])
+  @@map("vendors")
+}
+
+model BookingVendor {
+  id             String                   @id @default(cuid())
+  organizationId String                   @map("organization_id")
+  bookingId      String                   @map("booking_id")
+  vendorId       String?                  @map("vendor_id")
+  category       VendorCategory           @default(OTHER)
+  name           String
+  phone          String?
+  contactPerson  String?                  @map("contact_person")
+  status         VendorConfirmationStatus @default(PENDING)
+  costFils       Int?                     @map("cost_fils")
+  notes          String?
+  createdAt      DateTime                 @default(now()) @map("created_at")
+  updatedAt      DateTime                 @updatedAt @map("updated_at")
+
+  organization Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  booking      Booking      @relation(fields: [bookingId], references: [id], onDelete: Cascade)
+  vendor       Vendor?      @relation(fields: [vendorId], references: [id], onDelete: SetNull)
+
+  @@index([organizationId])
+  @@index([bookingId])
+  @@map("booking_vendors")
+}
+
+// ---------------------------------------------------------------------------
+// سجل التواصل + التذكيرات
+// ---------------------------------------------------------------------------
+
+enum CommunicationType {
+  NOTE
+  CALL
+  WHATSAPP
+  EMAIL
+  MEETING
+  SPECIAL_REQUEST
+}
+
+enum CommunicationDirection {
+  IN
+  OUT
+}
+
+model CommunicationLog {
+  id             String                  @id @default(cuid())
+  organizationId String                  @map("organization_id")
+  clientId       String                  @map("client_id")
+  bookingId      String?                 @map("booking_id")
+  type           CommunicationType       @default(NOTE)
+  direction      CommunicationDirection?
+  body           String
+  createdById    String?                 @map("created_by_id")
+  createdAt      DateTime                @default(now()) @map("created_at")
+
+  organization Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  client       Client       @relation(fields: [clientId], references: [id], onDelete: Cascade)
+  booking      Booking?     @relation(fields: [bookingId], references: [id], onDelete: SetNull)
+  createdBy    User?        @relation(fields: [createdById], references: [id], onDelete: SetNull)
+
+  @@index([organizationId])
+  @@index([clientId])
+  @@index([bookingId])
+  @@map("communication_logs")
+}
+
+enum ReminderKind {
+  BOOKING_CONFIRMATION
+  PAYMENT_DUE
+  EVENT_DAY_BEFORE
+  CUSTOM
+}
+
+enum ReminderStatus {
+  PENDING
+  SENT
+  SKIPPED
+}
+
+model Reminder {
+  id             String         @id @default(cuid())
+  organizationId String         @map("organization_id")
+  bookingId      String         @map("booking_id")
+  kind           ReminderKind   @default(CUSTOM)
+  channel        String         @default("WHATSAPP")
+  scheduledFor   DateTime       @map("scheduled_for")
+  sentAt         DateTime?      @map("sent_at")
+  status         ReminderStatus @default(PENDING)
+  payloadText    String         @map("payload_text")
+  createdAt      DateTime       @default(now()) @map("created_at")
+
+  organization Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  booking      Booking      @relation(fields: [bookingId], references: [id], onDelete: Cascade)
+
+  @@index([organizationId])
+  @@index([organizationId, status, scheduledFor])
+  @@map("reminders")
+}
+
+// ---------------------------------------------------------------------------
+// عدّادات الترقيم التسلسلي (لكل منشأة) — للفواتير والحجوزات والعقود
+// ---------------------------------------------------------------------------
+
+model InvoiceCounter {
+  organizationId String @id @map("organization_id")
+  year           Int
+  lastNumber     Int    @default(0) @map("last_number")
+
+  organization Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+
+  @@map("invoice_counters")
+}
+
+model BookingCounter {
+  organizationId String @id @map("organization_id")
+  year           Int
+  lastNumber     Int    @default(0) @map("last_number")
+
+  organization Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+
+  @@map("booking_counters")
+}

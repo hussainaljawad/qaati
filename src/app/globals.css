@@ -1,0 +1,105 @@
+@import "tailwindcss";
+
+/* ───────────────────────────────────────────────────────────────────────────
+   نظام «قاعتي» البصري — كريمي دافئ · عنابي غامق · ذهبي خافت
+   مرجع الاتجاه: hall-dashboard-mockup.html
+   ─────────────────────────────────────────────────────────────────────────── */
+
+@theme {
+  /* ألوان العلامة */
+  --color-paper: #faf6ef;
+  --color-paper-2: #f1e9da;
+  --color-ink: #2a1b2e;
+  --color-ink-soft: #6b5c6e;
+  --color-line: #e3d8c6;
+
+  --color-gold: #b07c2c;
+  --color-gold-soft: #e9d4a8;
+  --color-wine: #9c3a48;
+  --color-wine-soft: #f1d9da;
+  --color-olive: #516b3e;
+  --color-olive-soft: #dce6ce;
+
+  /* تدرّج الهيدر */
+  --color-header-from: #3a2140;
+  --color-header-to: #2a1b2e;
+
+  /* أنصاف الأقطار */
+  --radius-card: 18px;
+  --radius-tile: 14px;
+
+  /* الخطوط — المتغيّرات تُحقن من next/font في التخطيط الجذري */
+  --font-sans:
+    var(--font-plex-arabic), "IBM Plex Sans Arabic", system-ui, -apple-system,
+    "Segoe UI", sans-serif;
+  --font-kufi:
+    var(--font-noto-kufi), "Noto Kufi Arabic", var(--font-plex-arabic),
+    system-ui, sans-serif;
+
+  /* أقصى عرض للمحتوى على الجوال أولاً */
+  --container-app: 30rem;
+}
+
+:root {
+  color-scheme: light;
+}
+
+@layer base {
+  html {
+    -webkit-text-size-adjust: 100%;
+  }
+
+  body {
+    background-color: var(--color-paper-2);
+    color: var(--color-ink);
+    font-family: var(--font-sans);
+    -webkit-font-smoothing: antialiased;
+    text-rendering: optimizeLegibility;
+  }
+
+  h1,
+  h2,
+  h3,
+  h4,
+  h5 {
+    font-family: var(--font-kufi);
+    font-weight: 700;
+  }
+
+  /* إخفاء أشرطة التمرير الأفقية للشرائط (تقويم مصغّر…) */
+  .no-scrollbar {
+    scrollbar-width: none;
+  }
+  .no-scrollbar::-webkit-scrollbar {
+    display: none;
+  }
+}
+
+/* نقشة المشربية — تُستخدم كطبقة زخرفية في الهيدر */
+@utility mashrabiya {
+  background-image:
+    linear-gradient(
+      45deg,
+      transparent 46%,
+      var(--color-gold-soft) 46%,
+      var(--color-gold-soft) 48%,
+      transparent 48%
+    ),
+    linear-gradient(
+      -45deg,
+      transparent 46%,
+      var(--color-gold-soft) 46%,
+      var(--color-gold-soft) 48%,
+      transparent 48%
+    );
+  background-size: 26px 26px;
+}
+
+/* تدرّج خلفية الهيدر */
+@utility bg-header {
+  background-image: linear-gradient(
+    160deg,
+    var(--color-header-from) 0%,
+    var(--color-header-to) 65%
+  );
+}
