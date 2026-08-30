@@ -27,7 +27,7 @@ export default async function ShellLayout({ children }: LayoutProps<"/">) {
         <main className="mx-auto flex w-full max-w-5xl flex-1 flex-col pb-2 lg:pb-10">
           {children}
         </main>
-        <Fab href="/bookings/new" label="حجز جديد" />
+        <Fab href="/bookings/new" label="+" />
         <BottomNav />
       </div>
     </div>

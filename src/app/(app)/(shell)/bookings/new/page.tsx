@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
+import { getTranslations } from "next-intl/server";
 import { requireActiveSubscription } from "@/lib/auth/guards";
 import { listHalls } from "@/lib/halls/queries";
 import { listClients } from "@/lib/clients/queries";
@@ -13,6 +14,7 @@ export default async function NewBookingPage({
 }: PageProps<"/bookings/new">) {
   const session = await requireActiveSubscription();
   const orgId = session.organization.id;
+  const t = await getTranslations("bookings");
   const sp = await searchParams;
 
   const [halls, clients] = await Promise.all([
@@ -22,13 +24,13 @@ export default async function NewBookingPage({
 
   return (
     <>
-      <PageHeader title="حجز جديد" backHref="/calendar" />
+      <PageHeader title={t("new")} backHref="/calendar" />
 
       {halls.length === 0 ? (
         <div className="p-6 text-center text-sm text-ink-soft">
-          لازم تضيف قاعة أول.{" "}
+          {t("needHallFirst")}{" "}
           <Link href="/settings/halls/new" className="font-semibold text-gold">
-            أضف قاعة
+            {t("addHall")}
           </Link>
         </div>
       ) : (

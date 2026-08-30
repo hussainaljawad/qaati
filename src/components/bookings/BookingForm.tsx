@@ -1,6 +1,7 @@
 "use client";
 
 import { useActionState, useState } from "react";
+import { useTranslations } from "next-intl";
 import {
   createBookingAction,
   updateBookingAction,
@@ -54,6 +55,8 @@ type EditProps = {
 
 export function BookingForm(props: CreateProps | EditProps) {
   const isEdit = props.mode === "edit";
+  const t = useTranslations("bookingForm");
+  const tc = useTranslations("common");
   const [state, action, pending] = useActionState(
     isEdit ? updateBookingAction : createBookingAction,
     emptyForm,
@@ -73,17 +76,17 @@ export function BookingForm(props: CreateProps | EditProps) {
       {!isEdit ? (
         <fieldset className="space-y-3 rounded-[var(--radius-card)] border border-line bg-paper p-4">
           <legend className="px-1 font-kufi text-sm font-bold text-ink">
-            العميل
+            {t("clientSection")}
           </legend>
 
           {!newClient ? (
-            <Field label="اختر عميلاً" error={fe.clientId}>
+            <Field label={t("pickClient")} error={fe.clientId}>
               <Select
                 name="clientId"
                 defaultValue={props.defaultClientId ?? ""}
                 required={!newClient}
               >
-                <option value="">— اختر —</option>
+                <option value="">{t("choose")}</option>
                 {props.clients.map((c) => (
                   <option key={c.id} value={c.id}>
                     {c.name} · {c.phone}
@@ -93,10 +96,10 @@ export function BookingForm(props: CreateProps | EditProps) {
             </Field>
           ) : (
             <div className="grid grid-cols-2 gap-3">
-              <Field label="اسم العميل" error={fe.newClientName}>
+              <Field label={t("clientName")} error={fe.newClientName}>
                 <TextInput name="newClientName" required={newClient} />
               </Field>
-              <Field label="الجوال" error={fe.newClientPhone}>
+              <Field label={t("phone")} error={fe.newClientPhone}>
                 <TextInput
                   name="newClientPhone"
                   dir="ltr"
@@ -112,29 +115,32 @@ export function BookingForm(props: CreateProps | EditProps) {
             onClick={() => setNewClient((v) => !v)}
             className="text-xs font-semibold text-gold"
           >
-            {newClient ? "← اختيار عميل موجود" : "+ عميل جديد"}
+            {newClient ? t("pickExisting") : t("newClient")}
           </button>
         </fieldset>
       ) : (
         <div className="rounded-[var(--radius-card)] border border-line bg-paper p-4 text-sm text-ink-soft">
-          العميل <b className="text-ink">{b!.clientName}</b> · القاعة{" "}
-          <b className="text-ink">{b!.hallName}</b>
+          {t.rich("summary", {
+            client: b!.clientName,
+            hall: b!.hallName,
+            b: (c) => <b className="text-ink">{c}</b>,
+          })}
         </div>
       )}
 
       <fieldset className="space-y-3 rounded-[var(--radius-card)] border border-line bg-paper p-4">
         <legend className="px-1 font-kufi text-sm font-bold text-ink">
-          المناسبة
+          {t("eventSection")}
         </legend>
 
         {!isEdit ? (
-          <Field label="القاعة" error={fe.hallId}>
+          <Field label={t("hall")} error={fe.hallId}>
             <Select
               name="hallId"
               defaultValue={props.defaultHallId ?? ""}
               required
             >
-              <option value="">— اختر —</option>
+              <option value="">{t("choose")}</option>
               {props.halls.map((h) => (
                 <option key={h.id} value={h.id}>
                   {h.name}
@@ -144,7 +150,7 @@ export function BookingForm(props: CreateProps | EditProps) {
           </Field>
         ) : null}
 
-        <Field label="نوع المناسبة" error={fe.eventType}>
+        <Field label={t("eventType")} error={fe.eventType}>
           <TextInput
             name="eventType"
             list="event-types"
@@ -158,7 +164,7 @@ export function BookingForm(props: CreateProps | EditProps) {
           </datalist>
         </Field>
 
-        <Field label="التاريخ" error={fe.eventDate}>
+        <Field label={t("date")} error={fe.eventDate}>
           <TextInput
             name="eventDate"
             type="date"
@@ -169,7 +175,7 @@ export function BookingForm(props: CreateProps | EditProps) {
         </Field>
 
         <div className="grid grid-cols-2 gap-3">
-          <Field label="من الساعة" error={fe.startTime}>
+          <Field label={t("startTime")} error={fe.startTime}>
             <TextInput
               name="startTime"
               type="time"
@@ -177,7 +183,7 @@ export function BookingForm(props: CreateProps | EditProps) {
               defaultValue={b?.startTime ?? ""}
             />
           </Field>
-          <Field label="إلى الساعة" error={fe.endTime}>
+          <Field label={t("endTime")} error={fe.endTime}>
             <TextInput
               name="endTime"
               type="time"
@@ -187,7 +193,7 @@ export function BookingForm(props: CreateProps | EditProps) {
           </Field>
         </div>
 
-        <Field label="عدد الضيوف" error={fe.guestsCount}>
+        <Field label={t("guests")} error={fe.guestsCount}>
           <TextInput
             name="guestsCount"
             type="number"
@@ -201,10 +207,10 @@ export function BookingForm(props: CreateProps | EditProps) {
 
       <fieldset className="space-y-3 rounded-[var(--radius-card)] border border-line bg-paper p-4">
         <legend className="px-1 font-kufi text-sm font-bold text-ink">
-          السعر
+          {t("priceSection")}
         </legend>
         <div className="grid grid-cols-2 gap-3">
-          <Field label="القيمة الإجمالية (د.ب)" error={fe.totalBhd}>
+          <Field label={t("total")} error={fe.totalBhd}>
             <TextInput
               name="totalBhd"
               type="number"
@@ -215,7 +221,7 @@ export function BookingForm(props: CreateProps | EditProps) {
               defaultValue={b ? filsToBhd(b.totalAmountFils) || "" : ""}
             />
           </Field>
-          <Field label="خصم (د.ب)" error={fe.discountBhd}>
+          <Field label={t("discount")} error={fe.discountBhd}>
             <TextInput
               name="discountBhd"
               type="number"
@@ -232,7 +238,7 @@ export function BookingForm(props: CreateProps | EditProps) {
       {!isEdit ? (
         <fieldset className="space-y-3 rounded-[var(--radius-card)] border border-line bg-paper p-4">
           <legend className="px-1 font-kufi text-sm font-bold text-ink">
-            الحالة
+            {t("statusSection")}
           </legend>
           <div className="grid grid-cols-2 gap-2">
             {(["HOLD", "CONFIRMED"] as const).map((s) => (
@@ -252,12 +258,12 @@ export function BookingForm(props: CreateProps | EditProps) {
                   onChange={() => setStatus(s)}
                   className="sr-only"
                 />
-                {s === "HOLD" ? "مبدئي" : "مؤكد"}
+                {s === "HOLD" ? t("hold") : t("confirmed")}
               </label>
             ))}
           </div>
           {status === "HOLD" ? (
-            <Field label="ينتهي الحجز المبدئي بعد (أيام)" error={fe.holdDays}>
+            <Field label={t("holdDays")} error={fe.holdDays}>
               <TextInput
                 name="holdDays"
                 type="number"
@@ -274,18 +280,18 @@ export function BookingForm(props: CreateProps | EditProps) {
 
       <fieldset className="space-y-3 rounded-[var(--radius-card)] border border-line bg-paper p-4">
         <legend className="px-1 font-kufi text-sm font-bold text-ink">
-          تفاصيل
+          {t("detailsSection")}
         </legend>
-        <Field label="شروط الحجز" error={fe.terms}>
+        <Field label={t("terms")} error={fe.terms}>
           <Textarea name="terms" defaultValue={b?.terms ?? ""} rows={3} />
         </Field>
-        <Field label="ملاحظات داخلية" error={fe.notes}>
+        <Field label={t("notes")} error={fe.notes}>
           <Textarea name="notes" defaultValue={b?.notes ?? ""} rows={2} />
         </Field>
       </fieldset>
 
       <Button type="submit" size="lg" disabled={pending}>
-        {pending ? "…" : isEdit ? "حفظ التعديلات" : "إنشاء الحجز"}
+        {pending ? tc("sending") : isEdit ? t("saveEdits") : t("create")}
       </Button>
     </form>
   );

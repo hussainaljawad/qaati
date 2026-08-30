@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { getLocale } from "next-intl/server";
+import { getLocale, getTranslations } from "next-intl/server";
 import { FileText, Pencil, Receipt } from "lucide-react";
 import { requireActiveSubscription } from "@/lib/auth/guards";
 import { getBooking } from "@/lib/bookings/queries";
@@ -11,6 +11,7 @@ import { getBookingContract } from "@/lib/contracts/queries";
 import { getBookingInvoice } from "@/lib/invoices/queries";
 import { matchingWaitlist } from "@/lib/waitlist/queries";
 import { STATUS_TONE } from "@/lib/bookings/status";
+import { getLabels } from "@/lib/labels";
 import {
   formatDate,
   formatHijriDate,
@@ -36,19 +37,16 @@ import { generateInvoiceAction } from "@/app/actions/invoices";
 
 export const metadata: Metadata = { title: "تفاصيل الحجز" };
 
-const STATUS_LABEL = {
-  HOLD: "مبدئي",
-  CONFIRMED: "مؤكد",
-  CANCELLED: "ملغي",
-  COMPLETED: "مكتمل",
-} as const;
-
 export default async function BookingPage({
   params,
 }: PageProps<"/bookings/[id]">) {
   const session = await requireActiveSubscription();
   const { id } = await params;
   const locale = (await getLocale()) as Locale;
+  const t = await getTranslations("bookings.detail");
+  const tb = await getTranslations("bookings");
+  const tc = await getTranslations("common");
+  const labels = getLabels(locale);
   const org = session.organization;
 
   const booking = await getBooking(org.id, id);
@@ -114,13 +112,13 @@ export default async function BookingPage({
     <>
       <PageHeader
         title={`${booking.eventType} — ${booking.client.name}`}
-        subtitle={`حجز ${booking.reference}`}
+        subtitle={tb("ref", { ref: booking.reference })}
         backHref="/calendar"
         action={
           editable ? (
             <Link
               href={`/bookings/${booking.id}/edit`}
-              aria-label="تعديل"
+              aria-label={tc("edit")}
               className="flex size-8 items-center justify-center rounded-full bg-paper/10"
             >
               <Pencil className="size-4" />
@@ -132,7 +130,7 @@ export default async function BookingPage({
       <div className="space-y-4 p-4">
         <div className="flex flex-wrap items-center justify-between gap-2">
           <Badge tone={STATUS_TONE[booking.status]}>
-            {STATUS_LABEL[booking.status]}
+            {labels.bookingStatus[booking.status]}
           </Badge>
           <WhatsappSendButton
             phone={booking.client.phone}
@@ -140,25 +138,24 @@ export default async function BookingPage({
             clientId={booking.clientId}
             bookingId={booking.id}
             reminderKind="BOOKING_CONFIRMATION"
-            label="إرسال التفاصيل"
+            label={t("sendDetails")}
           />
         </div>
 
-        {/* التفاصيل */}
-        <dl className="grid grid-cols-2 gap-3 rounded-[var(--radius-card)] border border-line bg-paper p-4 text-sm">
+        <dl className="grid grid-cols-2 gap-3 rounded-[var(--radius-card)] border border-line bg-paper p-4 text-sm lg:grid-cols-3">
           <Row
-            label="العميل"
+            label={t("client")}
             value={booking.client.name}
             sub={booking.client.phone}
           />
-          <Row label="القاعة" value={booking.hall.name} />
+          <Row label={t("hall")} value={booking.hall.name} />
           <Row
-            label="التاريخ"
+            label={t("date")}
             value={dateText}
             sub={formatHijriDate(booking.eventDate, locale) + " هـ"}
           />
           <Row
-            label="الوقت"
+            label={t("time")}
             value={
               booking.startTime
                 ? formatTime(booking.startTime, locale) +
@@ -169,17 +166,16 @@ export default async function BookingPage({
             }
           />
           <Row
-            label="الضيوف"
+            label={t("guests")}
             value={
               booking.guestsCount
                 ? formatNumber(booking.guestsCount, locale)
                 : "—"
             }
           />
-          <Row label="أنشأه" value={booking.createdBy?.name ?? "—"} />
+          <Row label={t("createdBy")} value={booking.createdBy?.name ?? "—"} />
         </dl>
 
-        {/* خطة الدفع */}
         <PaymentPlan
           bookingId={booking.id}
           netFils={net}
@@ -197,14 +193,17 @@ export default async function BookingPage({
           }))}
         />
 
-        {/* تذكير بالمتبقي */}
         {summary.remainingFils > 0 && booking.status !== "CANCELLED" ? (
           <div className="flex items-center justify-between rounded-[var(--radius-card)] border border-wine-soft bg-wine-soft/20 p-4">
             <div>
               <p className="text-sm font-semibold text-ink">
-                متبقٍ {formatMoney(summary.remainingFils, locale)}
+                {t("remaining", {
+                  amount: formatMoney(summary.remainingFils, locale),
+                })}
               </p>
-              <p className="text-[11px] text-ink-soft">أرسل تذكيراً للعميل</p>
+              <p className="text-[11px] text-ink-soft">
+                {t("sendReminderHint")}
+              </p>
             </div>
             <WhatsappSendButton
               phone={booking.client.phone}
@@ -212,12 +211,11 @@ export default async function BookingPage({
               clientId={booking.clientId}
               bookingId={booking.id}
               reminderKind="PAYMENT_DUE"
-              label="تذكير واتساب"
+              label={t("reminderCta")}
             />
           </div>
         ) : null}
 
-        {/* العقد والفاتورة */}
         <div className="grid grid-cols-2 gap-3">
           {contract ? (
             <Link
@@ -226,10 +224,10 @@ export default async function BookingPage({
             >
               <FileText className="size-5 text-gold" />
               <span className="text-xs font-semibold text-ink">
-                العقد {contract.contractNumber}
+                {t("contractLabel", { number: contract.contractNumber })}
               </span>
               <span className="text-[10px] text-ink-soft">
-                {contract.signedAt ? "موقّع" : "غير موقّع"}
+                {contract.signedAt ? t("signed") : t("notSigned")}
               </span>
             </Link>
           ) : (
@@ -241,7 +239,7 @@ export default async function BookingPage({
               >
                 <FileText className="size-5 text-ink-soft" />
                 <span className="text-xs font-semibold text-ink">
-                  إنشاء عقد
+                  {t("createContract")}
                 </span>
               </button>
             </form>
@@ -254,16 +252,10 @@ export default async function BookingPage({
             >
               <Receipt className="size-5 text-gold" />
               <span className="text-xs font-semibold text-ink">
-                فاتورة {invoice.invoiceNumber}
+                {t("invoiceLabel", { number: invoice.invoiceNumber })}
               </span>
               <span className="text-[10px] text-ink-soft">
-                {invoice.status === "DRAFT"
-                  ? "مسودة"
-                  : invoice.status === "ISSUED"
-                    ? "صادرة"
-                    : invoice.status === "PAID"
-                      ? "مدفوعة"
-                      : "ملغاة"}
+                {labels.invoiceStatus[invoice.status]}
               </span>
             </Link>
           ) : (
@@ -275,7 +267,7 @@ export default async function BookingPage({
               >
                 <Receipt className="size-5 text-ink-soft" />
                 <span className="text-xs font-semibold text-ink">
-                  إنشاء فاتورة
+                  {t("createInvoice")}
                 </span>
               </button>
             </form>
@@ -304,20 +296,21 @@ export default async function BookingPage({
         />
 
         {booking.terms ? (
-          <Panel title="شروط الحجز">{booking.terms}</Panel>
+          <Panel title={t("terms")}>{booking.terms}</Panel>
         ) : null}
         {booking.notes ? (
-          <Panel title="ملاحظات داخلية">{booking.notes}</Panel>
+          <Panel title={t("notes")}>{booking.notes}</Panel>
         ) : null}
         {booking.status === "CANCELLED" && booking.cancellationReason ? (
-          <Panel title="سبب الإلغاء">{booking.cancellationReason}</Panel>
+          <Panel title={t("cancelReason")}>{booking.cancellationReason}</Panel>
         ) : null}
 
         {waitlistMatches.length > 0 ? (
           <div className="rounded-[var(--radius-card)] border border-gold-soft bg-gold-soft/30 p-4">
             <h3 className="mb-2 font-kufi text-sm font-bold text-ink">
-              {formatNumber(waitlistMatches.length, locale)} على قائمة الانتظار
-              لهذا الموعد
+              {t("waitlistMatch", {
+                count: formatNumber(waitlistMatches.length, locale),
+              })}
             </h3>
             <ul className="space-y-1.5">
               {waitlistMatches.map((w) => (
@@ -335,7 +328,7 @@ export default async function BookingPage({
                     rel="noopener noreferrer"
                     className="font-semibold text-olive"
                   >
-                    تواصل
+                    {t("contact")}
                   </a>
                 </li>
               ))}
@@ -344,7 +337,9 @@ export default async function BookingPage({
         ) : null}
 
         <div className="rounded-[var(--radius-card)] border border-line bg-paper p-4">
-          <h3 className="mb-2 font-kufi text-sm font-bold text-ink">إجراءات</h3>
+          <h3 className="mb-2 font-kufi text-sm font-bold text-ink">
+            {t("actions")}
+          </h3>
           <BookingStatusActions
             bookingId={booking.id}
             status={booking.status}

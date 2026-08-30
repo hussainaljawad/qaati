@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { ExternalLink } from "lucide-react";
+import { getTranslations } from "next-intl/server";
 import { requireActiveSubscription } from "@/lib/auth/guards";
 import { getInvoice } from "@/lib/invoices/queries";
 import { PageHeader } from "@/components/app/PageHeader";
@@ -16,13 +17,15 @@ export default async function InvoicePage({
   const session = await requireActiveSubscription();
   const { id } = await params;
 
+  const t = await getTranslations("invoices");
+  const tc = await getTranslations("common");
   const invoice = await getInvoice(session.organization.id, id);
   if (!invoice) notFound();
 
   return (
     <>
       <PageHeader
-        title={`فاتورة ${invoice.invoiceNumber}`}
+        title={t("titleOne", { number: invoice.invoiceNumber })}
         subtitle={invoice.client?.name ?? undefined}
         backHref={
           invoice.booking ? `/bookings/${invoice.booking.id}` : "/invoices"
@@ -32,7 +35,7 @@ export default async function InvoicePage({
             href={`/print/invoice/${invoice.id}`}
             target="_blank"
             rel="noopener noreferrer"
-            aria-label="طباعة"
+            aria-label={tc("print")}
             className="flex size-8 items-center justify-center rounded-full bg-paper/10"
           >
             <ExternalLink className="size-4" />
@@ -57,7 +60,7 @@ export default async function InvoicePage({
           rel="noopener noreferrer"
           className="flex items-center justify-center gap-2 rounded-xl border border-line py-2.5 text-sm font-semibold text-ink"
         >
-          <ExternalLink className="size-4" /> فتح نسخة الطباعة
+          <ExternalLink className="size-4" /> {tc("openPrint")}
         </a>
 
         <div className="overflow-x-auto rounded-[var(--radius-card)] border border-line bg-white p-4">
@@ -69,7 +72,7 @@ export default async function InvoicePage({
             href={`/bookings/${invoice.booking.id}`}
             className="block text-center text-sm font-medium text-gold"
           >
-            رجوع للحجز
+            {tc("back")}
           </Link>
         ) : null}
       </div>

@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { getTranslations } from "next-intl/server";
 import { requireActiveSubscription } from "@/lib/auth/guards";
 import { listHalls } from "@/lib/halls/queries";
 import { listClients } from "@/lib/clients/queries";
@@ -10,6 +11,7 @@ export const metadata: Metadata = { title: "طلب انتظار" };
 export default async function NewWaitlistPage() {
   const session = await requireActiveSubscription();
   const orgId = session.organization.id;
+  const t = await getTranslations("waitlist");
 
   const [halls, clients] = await Promise.all([
     listHalls(orgId, { activeOnly: true }),
@@ -18,7 +20,7 @@ export default async function NewWaitlistPage() {
 
   return (
     <>
-      <PageHeader title="طلب على قائمة الانتظار" backHref="/waitlist" />
+      <PageHeader title={t("newTitle")} backHref="/waitlist" />
       <WaitlistForm
         halls={halls.map((h) => ({ id: h.id, name: h.name }))}
         clients={clients.map((c) => ({

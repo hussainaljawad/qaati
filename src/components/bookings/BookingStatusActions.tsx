@@ -1,6 +1,7 @@
 "use client";
 
 import { useActionState, useState } from "react";
+import { useTranslations } from "next-intl";
 import type { BookingStatus } from "@prisma/client";
 import { transitionBookingAction } from "@/app/actions/bookings";
 import { allowedTransitions } from "@/lib/bookings/status";
@@ -8,11 +9,11 @@ import { emptyForm } from "@/lib/forms";
 import { Button } from "@/components/ui/Button";
 import { FormError, TextInput } from "@/components/ui/Field";
 
-const LABEL: Record<BookingStatus, string> = {
-  HOLD: "رجوع لمبدئي",
-  CONFIRMED: "تأكيد الحجز",
-  CANCELLED: "إلغاء",
-  COMPLETED: "تعليم كمكتمل",
+const LABEL_KEY: Record<BookingStatus, string> = {
+  HOLD: "toHold",
+  CONFIRMED: "toConfirmed",
+  CANCELLED: "cancel",
+  COMPLETED: "toCompleted",
 };
 
 const VARIANT: Partial<
@@ -31,6 +32,7 @@ export function BookingStatusActions({
   bookingId: string;
   status: BookingStatus;
 }) {
+  const t = useTranslations("bookings.statusActions");
   const [state, action, pending] = useActionState(
     transitionBookingAction,
     emptyForm,
@@ -46,19 +48,19 @@ export function BookingStatusActions({
 
       <div className="flex flex-wrap gap-2">
         {targets
-          .filter((t) => t !== "CANCELLED")
-          .map((t) => (
-            <form key={t} action={action} className="flex-1">
+          .filter((target) => target !== "CANCELLED")
+          .map((target) => (
+            <form key={target} action={action} className="flex-1">
               <input type="hidden" name="bookingId" value={bookingId} />
-              <input type="hidden" name="to" value={t} />
+              <input type="hidden" name="to" value={target} />
               <Button
                 type="submit"
                 size="sm"
-                variant={VARIANT[t] ?? "secondary"}
+                variant={VARIANT[target] ?? "secondary"}
                 disabled={pending}
                 className="w-full"
               >
-                {LABEL[t]}
+                {t(LABEL_KEY[target])}
               </Button>
             </form>
           ))}
@@ -74,7 +76,7 @@ export function BookingStatusActions({
             <input type="hidden" name="to" value="CANCELLED" />
             <TextInput
               name="cancellationReason"
-              placeholder="سبب الإلغاء (اختياري)"
+              placeholder={t("cancelReasonPlaceholder")}
             />
             <div className="flex gap-2">
               <Button
@@ -84,7 +86,7 @@ export function BookingStatusActions({
                 disabled={pending}
                 className="flex-1"
               >
-                تأكيد الإلغاء
+                {t("confirmCancel")}
               </Button>
               <Button
                 type="button"
@@ -93,7 +95,7 @@ export function BookingStatusActions({
                 onClick={() => setConfirmCancel(false)}
                 className="flex-1"
               >
-                تراجع
+                {t("revert")}
               </Button>
             </div>
           </form>
@@ -103,7 +105,7 @@ export function BookingStatusActions({
             onClick={() => setConfirmCancel(true)}
             className="w-full py-2 text-center text-sm font-semibold text-wine"
           >
-            إلغاء الحجز
+            {t("cancel")}
           </button>
         )
       ) : null}

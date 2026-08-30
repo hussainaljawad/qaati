@@ -1,29 +1,25 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import { getLocale } from "next-intl/server";
+import { getLocale, getTranslations } from "next-intl/server";
 import { requireActiveSubscription } from "@/lib/auth/guards";
 import { listInvoices } from "@/lib/invoices/queries";
 import { formatDate } from "@/lib/format";
 import { formatMoney } from "@/lib/money";
+import { getLabels } from "@/lib/labels";
 import type { Locale } from "@/i18n/config";
 import { MashrabiyaHeader } from "@/components/app/MashrabiyaHeader";
 import { Badge } from "@/components/ui/Badge";
 
 export const metadata: Metadata = { title: "الفواتير" };
 
-const STATUS = {
-  DRAFT: { label: "مسودة", tone: "neutral" as const },
-  ISSUED: { label: "صادرة", tone: "gold" as const },
-  PAID: { label: "مدفوعة", tone: "olive" as const },
-  VOID: { label: "ملغاة", tone: "wine" as const },
-};
+const TONE = {
+  DRAFT: "neutral",
+  ISSUED: "gold",
+  PAID: "olive",
+  VOID: "wine",
+} as const;
 
-const FILTERS = [
-  { key: "all", label: "الكل" },
-  { key: "DRAFT", label: "مسودة" },
-  { key: "ISSUED", label: "صادرة" },
-  { key: "PAID", label: "مدفوعة" },
-] as const;
+const FILTER_KEYS = ["all", "DRAFT", "ISSUED", "PAID"] as const;
 
 export default async function InvoicesPage({
   searchParams,
@@ -31,6 +27,8 @@ export default async function InvoicesPage({
   const session = await requireActiveSubscription();
   const locale = (await getLocale()) as Locale;
   const sp = await searchParams;
+  const t = await getTranslations("invoices");
+  const labels = getLabels(locale).invoiceStatus;
   const filter = typeof sp.filter === "string" ? sp.filter : "all";
 
   const invoices = await listInvoices(session.organization.id, {
@@ -42,20 +40,23 @@ export default async function InvoicesPage({
 
   return (
     <>
-      <MashrabiyaHeader title="الفواتير" subtitle={session.organization.name} />
+      <MashrabiyaHeader
+        title={t("title")}
+        subtitle={session.organization.name}
+      />
 
       <div className="no-scrollbar flex gap-2 overflow-x-auto px-4 pt-4">
-        {FILTERS.map((f) => (
+        {FILTER_KEYS.map((key) => (
           <Link
-            key={f.key}
-            href={`/invoices?filter=${f.key}`}
+            key={key}
+            href={`/invoices?filter=${key}`}
             className={`shrink-0 whitespace-nowrap rounded-full border px-3 py-1.5 text-xs font-semibold ${
-              filter === f.key
+              filter === key
                 ? "border-ink bg-ink text-paper"
                 : "border-line bg-paper text-ink"
             }`}
           >
-            {f.label}
+            {t(`filters.${key}`)}
           </Link>
         ))}
       </div>
@@ -63,12 +64,12 @@ export default async function InvoicesPage({
       <div className="p-4">
         {invoices.length === 0 ? (
           <p className="rounded-[var(--radius-card)] border border-dashed border-line px-4 py-10 text-center text-sm text-ink-soft">
-            ما فيه فواتير. تُنشأ الفواتير من صفحة الحجز.
+            {t("empty")}
           </p>
         ) : (
           <div className="grid gap-2 sm:grid-cols-2 xl:grid-cols-3">
             {invoices.map((inv) => {
-              const meta = STATUS[inv.status];
+              const tone = TONE[inv.status];
               return (
                 <Link
                   key={inv.id}
@@ -94,7 +95,7 @@ export default async function InvoicesPage({
                     <span className="text-sm font-bold text-ink">
                       {formatMoney(inv.totalFils, locale, { compact: true })}
                     </span>
-                    <Badge tone={meta.tone}>{meta.label}</Badge>
+                    <Badge tone={tone}>{labels[inv.status]}</Badge>
                   </span>
                 </Link>
               );

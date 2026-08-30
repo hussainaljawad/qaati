@@ -1,4 +1,7 @@
+"use client";
+
 import Link from "next/link";
+import { useTranslations } from "next-intl";
 import type { ReactNode } from "react";
 
 export function MashrabiyaHeader({
@@ -16,6 +19,7 @@ export function MashrabiyaHeader({
   action?: ReactNode;
   children?: ReactNode;
 }) {
+  const ts = useTranslations("nav");
   const avatarEl = avatar ? (
     <div className="flex size-9 shrink-0 items-center justify-center rounded-full bg-gold-soft font-kufi text-sm font-bold text-ink">
       {avatar}
@@ -35,7 +39,7 @@ export function MashrabiyaHeader({
         <div className="flex shrink-0 items-center gap-2">
           {action}
           {avatarHref && avatarEl ? (
-            <Link href={avatarHref} aria-label="الإعدادات">
+            <Link href={avatarHref} aria-label={ts("settings")}>
               {avatarEl}
             </Link>
           ) : (

@@ -70,7 +70,9 @@ export default async function PlatformHome({
           value={String(d.counts.active)}
           label="مشترك مُفعّل"
           hint={
-            d.activatedThisMonth > 0 ? `+${d.activatedThisMonth} هذا الشهر` : "—"
+            d.activatedThisMonth > 0
+              ? `+${d.activatedThisMonth} هذا الشهر`
+              : "—"
           }
         />
         <Metric
@@ -101,10 +103,18 @@ export default async function PlatformHome({
 
       {/* رسم النمو */}
       <section className="rounded-xl border border-line bg-paper p-4">
-        <h2 className="mb-3 font-kufi text-sm font-bold">نمو التسجيلات — آخر ٦ أشهر</h2>
-        <div className="flex items-end justify-between gap-2" style={{ height: 120 }}>
+        <h2 className="mb-3 font-kufi text-sm font-bold">
+          نمو التسجيلات — آخر ٦ أشهر
+        </h2>
+        <div
+          className="flex items-end justify-between gap-2"
+          style={{ height: 120 }}
+        >
           {d.growth.map((g) => (
-            <div key={g.key} className="flex flex-1 flex-col items-center gap-1">
+            <div
+              key={g.key}
+              className="flex flex-1 flex-col items-center gap-1"
+            >
               <span className="text-[11px] font-bold text-ink">{g.count}</span>
               <div
                 className="w-full rounded-t-md bg-gold"
@@ -121,7 +131,9 @@ export default async function PlatformHome({
       {/* عمودان: تجارب تنتهي + النشاط */}
       <div className="grid gap-4 lg:grid-cols-2">
         <section className="rounded-xl border border-line bg-paper p-4">
-          <h2 className="mb-2 font-kufi text-sm font-bold">تجارب تنتهي خلال أسبوع</h2>
+          <h2 className="mb-2 font-kufi text-sm font-bold">
+            تجارب تنتهي خلال أسبوع
+          </h2>
           {d.trialsEndingSoon.length === 0 ? (
             <p className="py-4 text-center text-xs text-ink-soft">لا شيء</p>
           ) : (
@@ -159,13 +171,17 @@ export default async function PlatformHome({
                 };
                 return (
                   <li key={e.id} className="flex items-center gap-2 text-sm">
-                    <span className={`size-1.5 shrink-0 rounded-full ${meta.dot}`} />
+                    <span
+                      className={`size-1.5 shrink-0 rounded-full ${meta.dot}`}
+                    />
                     <Link
                       href={`/platform/subscribers/${e.organization.id}`}
                       className="min-w-0 flex-1 truncate hover:text-gold"
                     >
                       <b className="font-semibold">{meta.label}</b>{" "}
-                      <span className="text-ink-soft">— {e.organization.name}</span>
+                      <span className="text-ink-soft">
+                        — {e.organization.name}
+                      </span>
                     </Link>
                     <span className="shrink-0 text-[11px] text-ink-soft">
                       {formatDate(e.createdAt, "ar", {

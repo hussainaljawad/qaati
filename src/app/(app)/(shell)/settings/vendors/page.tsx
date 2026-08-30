@@ -1,6 +1,8 @@
 import type { Metadata } from "next";
+import { getLocale, getTranslations } from "next-intl/server";
 import { requireAdmin } from "@/lib/auth/guards";
-import { listVendors, VENDOR_CATEGORY_LABEL } from "@/lib/vendors/queries";
+import { listVendors } from "@/lib/vendors/queries";
+import { getLabels } from "@/lib/labels";
 import { deleteVendorAction } from "@/app/actions/vendors";
 import { waLink } from "@/lib/notifications/whatsapp";
 import { PageHeader } from "@/components/app/PageHeader";
@@ -10,16 +12,21 @@ export const metadata: Metadata = { title: "الموردون" };
 
 export default async function VendorsPage() {
   const session = await requireAdmin();
+  const t = await getTranslations("vendors");
+  const tc = await getTranslations("common");
+  const catLabels = getLabels(
+    (await getLocale()) as import("@/i18n/config").Locale,
+  ).vendorCategory;
   const vendors = await listVendors(session.organization.id);
 
   return (
     <>
-      <PageHeader title="دليل الموردين" backHref="/settings" />
+      <PageHeader title={t("directoryTitle")} backHref="/settings" />
 
       <div className="space-y-4 p-4">
         {vendors.length === 0 ? (
           <p className="rounded-[var(--radius-card)] border border-dashed border-line px-4 py-8 text-center text-sm text-ink-soft">
-            الدليل فاضي. أضف موردينك المعتادين ليسهل ربطهم بالحجوزات.
+            {t("directoryEmpty")}
           </p>
         ) : (
           <ul className="space-y-2">
@@ -33,7 +40,7 @@ export default async function VendorsPage() {
                     {v.name}
                   </p>
                   <p className="text-[11px] text-ink-soft">
-                    {VENDOR_CATEGORY_LABEL[v.category]}
+                    {catLabels[v.category]}
                     {v.contactPerson ? ` · ${v.contactPerson}` : ""}
                     {v.phone ? ` · ${v.phone}` : ""}
                   </p>
@@ -46,13 +53,13 @@ export default async function VendorsPage() {
                       rel="noopener noreferrer"
                       className="text-olive"
                     >
-                      واتساب
+                      {tc("whatsapp")}
                     </a>
                   ) : null}
                   <form action={deleteVendorAction}>
                     <input type="hidden" name="id" value={v.id} />
                     <button type="submit" className="text-wine">
-                      حذف
+                      {tc("delete")}
                     </button>
                   </form>
                 </div>

@@ -238,7 +238,7 @@
     "create": "إنشاء الحجز",
     "saveEdits": "حفظ التعديلات",
     "editTitle": "تعديل الحجز",
-    "summary": "العميل {client} · القاعة {hall}"
+    "summary": "العميل <b>{client}</b> · القاعة <b>{hall}</b>"
   },
   "clients": {
     "title": "العملاء",

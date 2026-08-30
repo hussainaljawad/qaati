@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import { getLocale } from "next-intl/server";
+import { getLocale, getTranslations } from "next-intl/server";
+import { getLabels } from "@/lib/labels";
 import { Plus } from "lucide-react";
 import { requireAdmin } from "@/lib/auth/guards";
 import { listHalls } from "@/lib/halls/queries";
@@ -12,22 +13,22 @@ import { PageHeader } from "@/components/app/PageHeader";
 
 export const metadata: Metadata = { title: "القاعات" };
 
-const SECTION_LABEL = { MEN: "رجال", WOMEN: "نساء", MIXED: "مشترك" } as const;
-
 export default async function HallsPage() {
   const session = await requireAdmin();
   const locale = (await getLocale()) as Locale;
+  const t = await getTranslations("halls");
+  const sectionLabels = getLabels(locale).hallSection;
   const halls = await listHalls(session.organization.id);
 
   return (
     <>
       <PageHeader
-        title="القاعات"
+        title={t("title")}
         backHref="/settings"
         action={
           <Link
             href="/settings/halls/new"
-            aria-label="قاعة جديدة"
+            aria-label={t("new")}
             className="flex size-8 items-center justify-center rounded-full bg-gold text-ink"
           >
             <Plus className="size-5" />
@@ -38,7 +39,7 @@ export default async function HallsPage() {
       <div className="grid gap-2 p-4 sm:grid-cols-2">
         {halls.length === 0 ? (
           <p className="rounded-[var(--radius-card)] border border-dashed border-line px-4 py-10 text-center text-sm text-ink-soft">
-            ما فيه قاعات. أضف أول قاعة.
+            {t("empty")}
           </p>
         ) : (
           halls.map((h) => (
@@ -61,9 +62,9 @@ export default async function HallsPage() {
                       {h.name}
                     </p>
                     <p className="text-[11px] text-ink-soft">
-                      {SECTION_LABEL[h.section]}
+                      {sectionLabels[h.section]}
                       {h.capacitySeated
-                        ? ` · ${formatNumber(h.capacitySeated, locale)} ضيف`
+                        ? ` · ${t("guestsSuffix", { count: formatNumber(h.capacitySeated, locale) })}`
                         : ""}
                       {h.basePriceFils
                         ? ` · ${formatMoney(h.basePriceFils, locale, { compact: true })}`
@@ -75,7 +76,7 @@ export default async function HallsPage() {
                   href={`/settings/halls/${h.id}`}
                   className="text-xs font-semibold text-gold"
                 >
-                  تعديل
+                  {t("edit")}
                 </Link>
               </div>
               <form action={toggleHallActiveAction} className="mt-2">
@@ -84,7 +85,7 @@ export default async function HallsPage() {
                   type="submit"
                   className="text-[11px] font-medium text-ink-soft underline"
                 >
-                  {h.isActive ? "إيقاف" : "تفعيل"}
+                  {h.isActive ? t("disable") : t("enable")}
                 </button>
               </form>
             </div>

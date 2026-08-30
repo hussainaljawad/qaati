@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
+import { getTranslations } from "next-intl/server";
 import { requireAdmin } from "@/lib/auth/guards";
 import { getHall } from "@/lib/halls/queries";
 import { PageHeader } from "@/components/app/PageHeader";
@@ -12,12 +13,13 @@ export default async function EditHallPage({
 }: PageProps<"/settings/halls/[id]">) {
   const session = await requireAdmin();
   const { id } = await params;
+  const t = await getTranslations("halls");
   const hall = await getHall(session.organization.id, id);
   if (!hall) notFound();
 
   return (
     <>
-      <PageHeader title="تعديل القاعة" backHref="/settings/halls" />
+      <PageHeader title={t("editTitle")} backHref="/settings/halls" />
       <HallForm
         hall={{
           id: hall.id,

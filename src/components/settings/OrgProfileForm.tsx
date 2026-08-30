@@ -1,6 +1,8 @@
 "use client";
 
 import { useActionState } from "react";
+import { useTranslations } from "next-intl";
+
 import { updateOrgProfileAction } from "@/app/actions/settings";
 import { emptyForm } from "@/lib/forms";
 import { Button } from "@/components/ui/Button";
@@ -20,6 +22,7 @@ export function OrgProfileForm({ org }: { org: Org }) {
     updateOrgProfileAction,
     emptyForm,
   );
+  const t = useTranslations("org");
   const fe = state.fieldErrors ?? {};
 
   return (
@@ -31,24 +34,24 @@ export function OrgProfileForm({ org }: { org: Org }) {
         </p>
       ) : null}
 
-      <Field label="اسم المنشأة" error={fe.name}>
+      <Field label={t("name")} error={fe.name}>
         <TextInput name="name" defaultValue={org.name} required />
       </Field>
-      <Field label="الهاتف" error={fe.phone}>
+      <Field label={t("phone")} error={fe.phone}>
         <TextInput name="phone" dir="ltr" defaultValue={org.phone ?? ""} />
       </Field>
-      <Field label="العنوان" error={fe.address}>
+      <Field label={t("address")} error={fe.address}>
         <Textarea name="address" rows={2} defaultValue={org.address ?? ""} />
       </Field>
       <div className="grid grid-cols-2 gap-3">
-        <Field label="الرقم الضريبي (VAT)" error={fe.vatNumber}>
+        <Field label={t("vatNumber")} error={fe.vatNumber}>
           <TextInput
             name="vatNumber"
             dir="ltr"
             defaultValue={org.vatNumber ?? ""}
           />
         </Field>
-        <Field label="السجل التجاري" error={fe.crNumber}>
+        <Field label={t("crNumber")} error={fe.crNumber}>
           <TextInput
             name="crNumber"
             dir="ltr"
@@ -58,7 +61,7 @@ export function OrgProfileForm({ org }: { org: Org }) {
       </div>
 
       <Button type="submit" disabled={pending}>
-        {pending ? "…" : "حفظ"}
+        {pending ? "…" : t("save")}
       </Button>
     </form>
   );

@@ -1,6 +1,7 @@
 "use client";
 
 import { useActionState, useState } from "react";
+import { useTranslations } from "next-intl";
 import { addWaitlistAction } from "@/app/actions/waitlist";
 import { emptyForm } from "@/lib/forms";
 import { Button } from "@/components/ui/Button";
@@ -17,6 +18,8 @@ export function WaitlistForm({
   halls: Hall[];
   clients: ClientOption[];
 }) {
+  const t = useTranslations("waitlist.form");
+  const tf = useTranslations("bookingForm");
   const [state, action, pending] = useActionState(addWaitlistAction, emptyForm);
   const [newClient, setNewClient] = useState(false);
   const fe = state.fieldErrors ?? {};
@@ -26,9 +29,9 @@ export function WaitlistForm({
       {state.error ? <FormError>{state.error}</FormError> : null}
 
       {!newClient ? (
-        <Field label="العميل" error={fe.clientId}>
+        <Field label={t("client")} error={fe.clientId}>
           <Select name="clientId" defaultValue="">
-            <option value="">— اختر —</option>
+            <option value="">{tf("choose")}</option>
             {clients.map((c) => (
               <option key={c.id} value={c.id}>
                 {c.name} · {c.phone}
@@ -38,10 +41,10 @@ export function WaitlistForm({
         </Field>
       ) : (
         <div className="grid grid-cols-2 gap-3">
-          <Field label="الاسم" error={fe.contactName}>
+          <Field label={t("name")} error={fe.contactName}>
             <TextInput name="contactName" />
           </Field>
-          <Field label="الجوال" error={fe.contactPhone}>
+          <Field label={t("phone")} error={fe.contactPhone}>
             <TextInput name="contactPhone" dir="ltr" inputMode="tel" />
           </Field>
         </div>
@@ -51,12 +54,12 @@ export function WaitlistForm({
         onClick={() => setNewClient((v) => !v)}
         className="text-xs font-semibold text-gold"
       >
-        {newClient ? "← عميل موجود" : "+ جهة اتصال جديدة"}
+        {newClient ? t("existingClient") : t("newContact")}
       </button>
 
-      <Field label="القاعة" hint="اختياري" error={fe.hallId}>
+      <Field label={t("hall")} error={fe.hallId}>
         <Select name="hallId" defaultValue="">
-          <option value="">أي قاعة</option>
+          <option value="">{t("anyHall")}</option>
           {halls.map((h) => (
             <option key={h.id} value={h.id}>
               {h.name}
@@ -65,21 +68,21 @@ export function WaitlistForm({
         </Select>
       </Field>
 
-      <Field label="التاريخ المطلوب" error={fe.requestedDate}>
+      <Field label={t("date")} error={fe.requestedDate}>
         <TextInput name="requestedDate" type="date" dir="ltr" required />
       </Field>
 
       <label className="flex items-center gap-2 text-sm text-ink">
         <input type="checkbox" name="flexible" className="size-4 accent-gold" />
-        مرن على التاريخ
+        {t("flexibleLabel")}
       </label>
 
-      <Field label="ملاحظات" error={fe.notes}>
+      <Field label={t("notes")} error={fe.notes}>
         <Textarea name="notes" rows={2} />
       </Field>
 
       <Button type="submit" size="lg" disabled={pending}>
-        {pending ? "…" : "إضافة لقائمة الانتظار"}
+        {pending ? "…" : t("add")}
       </Button>
     </form>
   );

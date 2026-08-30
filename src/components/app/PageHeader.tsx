@@ -1,4 +1,7 @@
+"use client";
+
 import Link from "next/link";
+import { useTranslations } from "next-intl";
 import { ChevronRight } from "lucide-react";
 import type { ReactNode } from "react";
 
@@ -14,6 +17,7 @@ export function PageHeader({
   backHref?: string;
   action?: ReactNode;
 }) {
+  const tc = useTranslations("common");
   return (
     <header className="bg-header relative overflow-hidden px-4 pb-5 pt-5 text-paper">
       <div className="mashrabiya pointer-events-none absolute inset-0 opacity-15" />
@@ -22,7 +26,7 @@ export function PageHeader({
           {backHref ? (
             <Link
               href={backHref}
-              aria-label="رجوع"
+              aria-label={tc("back")}
               className="-ms-1 flex size-8 shrink-0 items-center justify-center rounded-full bg-paper/10"
             >
               <ChevronRight className="size-5 ltr:rotate-180" />

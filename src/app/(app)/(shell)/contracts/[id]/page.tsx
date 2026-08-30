@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { ExternalLink } from "lucide-react";
+import { getTranslations } from "next-intl/server";
 import { requireActiveSubscription } from "@/lib/auth/guards";
 import { getContract } from "@/lib/contracts/queries";
 import type { ContractDoc } from "@/lib/contracts/render";
@@ -20,12 +21,14 @@ export default async function ContractPage({
   const contract = await getContract(session.organization.id, id);
   if (!contract) notFound();
 
+  const t = await getTranslations("contracts");
+  const tc = await getTranslations("common");
   const doc = contract.bodySnapshot as unknown as ContractDoc;
 
   return (
     <>
       <PageHeader
-        title={`العقد ${contract.contractNumber}`}
+        title={t("title", { number: contract.contractNumber })}
         subtitle={doc.client.name}
         backHref={`/bookings/${contract.booking.id}`}
         action={
@@ -33,7 +36,7 @@ export default async function ContractPage({
             href={`/print/contract/${contract.id}`}
             target="_blank"
             rel="noopener noreferrer"
-            aria-label="طباعة"
+            aria-label={tc("print")}
             className="flex size-8 items-center justify-center rounded-full bg-paper/10"
           >
             <ExternalLink className="size-4" />
@@ -54,7 +57,7 @@ export default async function ContractPage({
           rel="noopener noreferrer"
           className="flex items-center justify-center gap-2 rounded-xl border border-line py-2.5 text-sm font-semibold text-ink"
         >
-          <ExternalLink className="size-4" /> فتح نسخة الطباعة
+          <ExternalLink className="size-4" /> {t("openPrint")}
         </a>
 
         <div className="overflow-hidden rounded-[var(--radius-card)] border border-line">
@@ -71,7 +74,7 @@ export default async function ContractPage({
           href={`/bookings/${contract.booking.id}`}
           className="block text-center text-sm font-medium text-gold"
         >
-          رجوع للحجز
+          {t("backToBooking")}
         </Link>
       </div>
     </>

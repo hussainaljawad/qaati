@@ -238,7 +238,7 @@
     "create": "Create booking",
     "saveEdits": "Save changes",
     "editTitle": "Edit booking",
-    "summary": "Client {client} · Hall {hall}"
+    "summary": "Client <b>{client}</b> · Hall <b>{hall}</b>"
   },
   "clients": {
     "title": "Clients",

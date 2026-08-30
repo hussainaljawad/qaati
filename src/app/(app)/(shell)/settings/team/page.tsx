@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
-import { getLocale } from "next-intl/server";
+import { getLocale, getTranslations } from "next-intl/server";
+import { getLabels } from "@/lib/labels";
 import { requireAdmin } from "@/lib/auth/guards";
 import { db } from "@/lib/db";
 import { setTeamMemberActiveAction } from "@/app/actions/settings";
@@ -10,12 +11,12 @@ import { TeamMemberForm } from "@/components/settings/TeamMemberForm";
 
 export const metadata: Metadata = { title: "الفريق" };
 
-const ROLE_LABEL = { ADMIN: "مالك / مدير", STAFF: "موظف استقبال" } as const;
-
 export default async function TeamPage() {
   const session = await requireAdmin();
   const locale = (await getLocale()) as Locale;
 
+  const t = await getTranslations("team");
+  const roleLabels = getLabels(locale).userRole;
   const members = await db.user.findMany({
     where: { organizationId: session.organization.id },
     orderBy: [{ role: "asc" }, { createdAt: "asc" }],
@@ -23,7 +24,7 @@ export default async function TeamPage() {
 
   return (
     <>
-      <PageHeader title="الفريق والصلاحيات" backHref="/settings" />
+      <PageHeader title={t("title")} backHref="/settings" />
 
       <div className="space-y-4 p-4">
         <ul className="space-y-2">
@@ -37,15 +38,15 @@ export default async function TeamPage() {
               <div className="min-w-0">
                 <p className="truncate font-kufi text-sm font-bold text-ink">
                   {m.name}
-                  {m.id === session.user.id ? " (أنت)" : ""}
+                  {m.id === session.user.id ? ` ${t("you")}` : ""}
                 </p>
                 <p className="truncate text-[11px] text-ink-soft" dir="ltr">
                   {m.email}
                 </p>
                 <p className="text-[11px] text-ink-soft">
-                  {ROLE_LABEL[m.role]}
+                  {roleLabels[m.role]}
                   {m.lastLoginAt
-                    ? ` · آخر دخول ${formatDate(m.lastLoginAt, locale, { day: "numeric", month: "short" })}`
+                    ? ` · ${t("lastLogin", { date: formatDate(m.lastLoginAt, locale, { day: "numeric", month: "short" }) })}`
                     : ""}
                 </p>
               </div>
@@ -56,7 +57,7 @@ export default async function TeamPage() {
                     type="submit"
                     className="text-xs font-semibold text-ink-soft underline"
                   >
-                    {m.isActive ? "إيقاف" : "تفعيل"}
+                    {m.isActive ? t("disable") : t("enable")}
                   </button>
                 </form>
               ) : null}

@@ -12,14 +12,18 @@ export async function listSubscribers(search?: string) {
           OR: [
             { name: { contains: q, mode: "insensitive" } },
             { slug: { contains: q, mode: "insensitive" } },
-            { users: { some: { email: { contains: q, mode: "insensitive" } } } },
+            {
+              users: { some: { email: { contains: q, mode: "insensitive" } } },
+            },
           ],
         }
       : undefined,
     orderBy: { createdAt: "desc" },
     include: {
       subscription: true,
-      _count: { select: { users: true, halls: true, bookings: true, clients: true } },
+      _count: {
+        select: { users: true, halls: true, bookings: true, clients: true },
+      },
       users: {
         where: { role: "ADMIN" },
         orderBy: { createdAt: "asc" },
@@ -55,8 +59,12 @@ function isYearly(start: Date | null, end: Date | null): boolean {
 
 export async function platformDashboard() {
   const now = new Date();
-  const monthStart = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), 1));
-  const monthEnd = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth() + 1, 1));
+  const monthStart = new Date(
+    Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), 1),
+  );
+  const monthEnd = new Date(
+    Date.UTC(now.getUTCFullYear(), now.getUTCMonth() + 1, 1),
+  );
 
   const [subs, allOrgs, events, recentEvents] = await Promise.all([
     db.subscription.findMany({
@@ -82,7 +90,14 @@ export async function platformDashboard() {
   ]);
 
   // حالات
-  const counts = { total: subs.length, active: 0, trialing: 0, pastDue: 0, expired: 0, cancelled: 0 };
+  const counts = {
+    total: subs.length,
+    active: 0,
+    trialing: 0,
+    pastDue: 0,
+    expired: 0,
+    cancelled: 0,
+  };
   let mrrFils = 0;
   const trialsEndingSoon: {
     organizationId: string;
@@ -118,7 +133,9 @@ export async function platformDashboard() {
   // نمو التسجيلات — آخر ٦ أشهر
   const growth: { label: string; count: number; key: string }[] = [];
   for (let i = 5; i >= 0; i--) {
-    const d = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth() - i, 1));
+    const d = new Date(
+      Date.UTC(now.getUTCFullYear(), now.getUTCMonth() - i, 1),
+    );
     const next = new Date(Date.UTC(d.getUTCFullYear(), d.getUTCMonth() + 1, 1));
     const count = allOrgs.filter(
       (o) => o.createdAt >= d && o.createdAt < next,
@@ -141,17 +158,23 @@ export async function platformDashboard() {
       e.createdAt < monthEnd,
   ).length;
   const activatedThisMonth = events.filter(
-    (e) => e.type === "ACTIVATED" && e.createdAt >= monthStart && e.createdAt < monthEnd,
+    (e) =>
+      e.type === "ACTIVATED" &&
+      e.createdAt >= monthStart &&
+      e.createdAt < monthEnd,
   ).length;
 
   // معدّل التحويل (منشآت فعّلت / منشآت بدأت تجربة)
   const startedTrial = new Set(
-    events.filter((e) => e.type === "TRIAL_STARTED").map((e) => e.organizationId),
+    events
+      .filter((e) => e.type === "TRIAL_STARTED")
+      .map((e) => e.organizationId),
   ).size;
   const everActivated = new Set(
     events.filter((e) => e.type === "ACTIVATED").map((e) => e.organizationId),
   ).size;
-  const conversionRate = startedTrial > 0 ? Math.round((everActivated / startedTrial) * 100) : 0;
+  const conversionRate =
+    startedTrial > 0 ? Math.round((everActivated / startedTrial) * 100) : 0;
 
   return {
     counts,

@@ -85,7 +85,7 @@ export default async function DashboardPage() {
       <div className="mx-4 mt-3 rounded-[var(--radius-card)] border border-line bg-paper p-4">
         <div className="mb-2 flex items-baseline justify-between">
           <span className="text-xs text-ink-soft">
-            محصّل / متوقّع هذا الشهر
+            {t("collectedVsExpected")}
           </span>
           <span className="font-kufi text-sm font-bold text-olive">
             {formatNumber(collectionRate, locale)}%
@@ -107,7 +107,9 @@ export default async function DashboardPage() {
             className="mt-3 flex items-center gap-2 rounded-lg bg-wine-soft px-3 py-2 text-xs font-medium text-wine"
           >
             <BellRing className="size-4" />
-            متأخرات {formatMoney(data.overdueFils, locale)} — أرسل تذكيرات
+            {t("overdueBanner", {
+              amount: formatMoney(data.overdueFils, locale),
+            })}
             <span className="ms-auto">‹</span>
           </Link>
         ) : null}
@@ -119,7 +121,9 @@ export default async function DashboardPage() {
           className="mx-4 mt-3 flex items-center gap-2 rounded-[var(--radius-tile)] border border-gold-soft bg-gold-soft/30 px-3 py-2.5 text-xs font-medium text-ink"
         >
           <ListChecks className="size-4 text-gold" />
-          {formatNumber(waitlist.length, locale)} على قائمة الانتظار
+          {t("waitlistBanner", {
+            count: formatNumber(waitlist.length, locale),
+          })}
           <span className="ms-auto text-gold">‹</span>
         </Link>
       ) : null}

@@ -34,12 +34,12 @@ gh repo create qaati --private --source=. --push
    `POSTGRES_URL_NON_POOLING` وبقية متغيّرات القاعدة تلقائياً لكل البيئات.
 3. في **Environment Variables** أضف يدوياً فقط:
 
-   | المفتاح | القيمة |
-   |---|---|
-   | `AUTH_SECRET` | ولّده بـ `openssl rand -base64 32` |
-   | `PLATFORM_ADMIN_EMAIL` | بريدك (لدخول `/platform`) |
-   | `PLATFORM_ADMIN_PASSWORD` | كلمة مرور قوية |
-   | `TRIAL_DAYS` | `14` (اختياري) |
+   | المفتاح                   | القيمة                             |
+   | ------------------------- | ---------------------------------- |
+   | `AUTH_SECRET`             | ولّده بـ `openssl rand -base64 32` |
+   | `PLATFORM_ADMIN_EMAIL`    | بريدك (لدخول `/platform`)          |
+   | `PLATFORM_ADMIN_PASSWORD` | كلمة مرور قوية                     |
+   | `TRIAL_DAYS`              | `14` (اختياري)                     |
 
 4. اضغط **Deploy**.
    - أمر البناء `vercel-build` في `package.json` يشغّل: `prisma generate` ثم

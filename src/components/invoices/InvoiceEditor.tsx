@@ -1,6 +1,7 @@
 "use client";
 
 import { useActionState, useState } from "react";
+import { useTranslations } from "next-intl";
 import { Plus, Trash2 } from "lucide-react";
 import {
   setInvoiceStatusAction,
@@ -22,6 +23,7 @@ export function InvoiceEditor({
   status: "DRAFT" | "ISSUED" | "PAID" | "VOID";
   lines: { description: string; quantity: number; unitPriceFils: number }[];
 }) {
+  const te = useTranslations("invoices.editor");
   const [lines, setLines] = useState<Line[]>(
     initialLines.map((l) => ({
       description: l.description,
@@ -39,13 +41,13 @@ export function InvoiceEditor({
   );
 
   const nextStatuses: Record<string, { to: string; label: string }[]> = {
-    DRAFT: [{ to: "ISSUED", label: "إصدار الفاتورة" }],
+    DRAFT: [{ to: "ISSUED", label: te("issue") }],
     ISSUED: [
-      { to: "PAID", label: "تعليم كمدفوعة" },
-      { to: "VOID", label: "إلغاء" },
+      { to: "PAID", label: te("markPaid") },
+      { to: "VOID", label: te("void") },
     ],
-    PAID: [{ to: "VOID", label: "إلغاء" }],
-    VOID: [{ to: "DRAFT", label: "إرجاع لمسودة" }],
+    PAID: [{ to: "VOID", label: te("void") }],
+    VOID: [{ to: "DRAFT", label: te("toDraft") }],
   };
 
   return (
@@ -54,7 +56,7 @@ export function InvoiceEditor({
         <form action={linesAction} className="space-y-2">
           {linesState.error ? <FormError>{linesState.error}</FormError> : null}
           <input type="hidden" name="invoiceId" value={invoiceId} />
-          <p className="font-kufi text-sm font-bold text-ink">بنود الفاتورة</p>
+          <p className="font-kufi text-sm font-bold text-ink">{te("lines")}</p>
           {lines.map((line, i) => (
             <div
               key={i}
@@ -63,7 +65,7 @@ export function InvoiceEditor({
               <TextInput
                 name="description"
                 defaultValue={line.description}
-                placeholder="الوصف"
+                placeholder={te("desc")}
               />
               <div className="flex gap-2">
                 <TextInput
@@ -82,14 +84,14 @@ export function InvoiceEditor({
                   min={0}
                   step="0.001"
                   defaultValue={line.unitPriceBhd || ""}
-                  placeholder="السعر (د.ب)"
+                  placeholder={te("unitPrice")}
                 />
                 {lines.length > 1 ? (
                   <button
                     type="button"
                     onClick={() => setLines(lines.filter((_, j) => j !== i))}
                     className="flex size-11 shrink-0 items-center justify-center rounded-xl border border-line text-wine"
-                    aria-label="حذف البند"
+                    aria-label={te("removeLine")}
                   >
                     <Trash2 className="size-4" />
                   </button>
@@ -107,7 +109,7 @@ export function InvoiceEditor({
             }
             className="flex items-center gap-1 text-xs font-semibold text-gold"
           >
-            <Plus className="size-4" /> إضافة بند
+            <Plus className="size-4" /> {te("addLine")}
           </button>
           <Button
             type="submit"
@@ -115,7 +117,7 @@ export function InvoiceEditor({
             disabled={linesPending}
             className="w-full"
           >
-            {linesPending ? "…" : "حفظ البنود وإعادة الحساب"}
+            {linesPending ? "…" : te("saveLines")}
           </Button>
         </form>
       ) : null}

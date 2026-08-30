@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
+import { getTranslations } from "next-intl/server";
 import { requireActiveSubscription } from "@/lib/auth/guards";
 import { getBooking } from "@/lib/bookings/queries";
 import { toDateOnlyString } from "@/lib/dates";
@@ -13,6 +14,8 @@ export default async function EditBookingPage({
 }: PageProps<"/bookings/[id]/edit">) {
   const session = await requireActiveSubscription();
   const { id } = await params;
+  const t = await getTranslations("bookings");
+  const tf = await getTranslations("bookingForm");
 
   const booking = await getBooking(session.organization.id, id);
   if (!booking) notFound();
@@ -20,8 +23,8 @@ export default async function EditBookingPage({
   return (
     <>
       <PageHeader
-        title="تعديل الحجز"
-        subtitle={`حجز ${booking.reference}`}
+        title={tf("editTitle")}
+        subtitle={t("ref", { ref: booking.reference })}
         backHref={`/bookings/${booking.id}`}
       />
       <BookingForm

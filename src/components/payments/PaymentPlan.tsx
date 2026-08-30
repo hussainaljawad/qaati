@@ -1,6 +1,7 @@
 "use client";
 
 import { useActionState, useEffect, useState } from "react";
+import { useLocale, useTranslations } from "next-intl";
 import {
   addInstallmentAction,
   applyPlanPresetAction,
@@ -12,12 +13,11 @@ import { emptyForm } from "@/lib/forms";
 import { filsToBhd, formatMoney } from "@/lib/money";
 import { formatDate } from "@/lib/format";
 import {
-  PAYMENT_KIND_LABEL,
-  PAYMENT_METHOD_LABEL,
   PLAN_PRESETS,
   effectivePaymentStatus,
   summarizePayments,
 } from "@/lib/payments/plan";
+import { getLabels } from "@/lib/labels";
 import type { Locale } from "@/i18n/config";
 import { Button } from "@/components/ui/Button";
 import { Field, FormError, Select, TextInput } from "@/components/ui/Field";
@@ -34,12 +34,18 @@ type P = {
   recordedByName: string | null;
 };
 
-const STATUS_META = {
-  PAID: { label: "مدفوعة", cls: "text-olive" },
-  OVERDUE: { label: "متأخرة", cls: "text-wine" },
-  DUE: { label: "مستحقة", cls: "text-ink-soft" },
-  WAIVED: { label: "معفاة", cls: "text-ink-soft line-through" },
-} as const;
+const PRESET_KEY: Record<string, string> = {
+  "deposit-final": "depositFinal",
+  "three-parts": "threeParts",
+  "half-half": "halfHalf",
+};
+
+const STATUS_CLS: Record<string, string> = {
+  PAID: "text-olive",
+  OVERDUE: "text-wine",
+  DUE: "text-ink-soft",
+  WAIVED: "text-ink-soft line-through",
+};
 
 export function PaymentPlan({
   bookingId,
@@ -52,6 +58,9 @@ export function PaymentPlan({
   payments: P[];
   locale: Locale;
 }) {
+  const t = useTranslations("payments");
+  const tc = useTranslations("common");
+  const labels = getLabels(locale);
   const [addOpen, setAddOpen] = useState(false);
   const [recordFor, setRecordFor] = useState<string | null>(null);
 
@@ -72,32 +81,32 @@ export function PaymentPlan({
 
   return (
     <div className="rounded-[var(--radius-card)] border border-line bg-paper p-4">
-      <h3 className="mb-3 font-kufi text-sm font-bold text-ink">خطة الدفع</h3>
+      <h3 className="mb-3 font-kufi text-sm font-bold text-ink">
+        {t("title")}
+      </h3>
 
-      {/* ملخّص */}
       <dl className="mb-3 grid grid-cols-2 gap-x-4 gap-y-1 text-sm">
-        <Row label="الصافي" value={formatMoney(summary.netFils, locale)} />
+        <Row label={t("net")} value={formatMoney(summary.netFils, locale)} />
         <Row
-          label="المدفوع"
+          label={t("paid")}
           value={formatMoney(summary.paidFils, locale)}
           tone="olive"
         />
         <Row
-          label="المتبقي"
+          label={t("remaining")}
           value={formatMoney(summary.remainingFils, locale)}
           tone={summary.remainingFils > 0 ? "wine" : "olive"}
           bold
         />
         {summary.overdueFils > 0 ? (
           <Row
-            label="متأخر"
+            label={t("overdue")}
             value={formatMoney(summary.overdueFils, locale)}
             tone="wine"
           />
         ) : null}
       </dl>
 
-      {/* الأقساط */}
       {payments.length > 0 ? (
         <ul className="mb-3 divide-y divide-line rounded-xl border border-line">
           {payments.map((p) => {
@@ -107,21 +116,20 @@ export function PaymentPlan({
                   dueDate: new Date(p.dueDate),
                 })
               : p.status;
-            const meta = STATUS_META[st];
             return (
               <li key={p.id} className="p-3">
                 <div className="flex items-center justify-between gap-2">
                   <div className="min-w-0">
                     <p className="text-sm font-semibold text-ink">
-                      {PAYMENT_KIND_LABEL[p.kind]} ·{" "}
+                      {labels.paymentKind[p.kind]} ·{" "}
                       {formatMoney(p.amountFils, locale)}
                     </p>
-                    <p className={`text-[11px] ${meta.cls}`}>
-                      {meta.label}
+                    <p className={`text-[11px] ${STATUS_CLS[st]}`}>
+                      {labels.paymentStatus[st]}
                       {p.status === "PAID" && p.paidAt
-                        ? ` · ${formatDate(p.paidAt, locale, { day: "numeric", month: "short" })}${p.method ? ` · ${PAYMENT_METHOD_LABEL[p.method] ?? p.method}` : ""}`
+                        ? ` · ${formatDate(p.paidAt, locale, { day: "numeric", month: "short" })}${p.method ? ` · ${labels.paymentMethod[p.method as keyof typeof labels.paymentMethod] ?? p.method}` : ""}`
                         : p.dueDate
-                          ? ` · استحقاق ${formatDate(p.dueDate, locale, { day: "numeric", month: "short" })}`
+                          ? ` · ${t("dueOn", { date: formatDate(p.dueDate, locale, { day: "numeric", month: "short" }) })}`
                           : ""}
                     </p>
                   </div>
@@ -133,7 +141,7 @@ export function PaymentPlan({
                       }
                       className="shrink-0 rounded-lg bg-gold px-2.5 py-1.5 text-[11px] font-semibold text-ink"
                     >
-                      تسجيل دفعة
+                      {t("recordPayment")}
                     </button>
                   ) : null}
                 </div>
@@ -147,13 +155,13 @@ export function PaymentPlan({
                     <form action={waivePaymentAction}>
                       <input type="hidden" name="id" value={p.id} />
                       <button type="submit" className="text-ink-soft">
-                        {p.status === "WAIVED" ? "إلغاء الإعفاء" : "إعفاء"}
+                        {p.status === "WAIVED" ? t("unwaive") : t("waive")}
                       </button>
                     </form>
                     <form action={deleteInstallmentAction}>
                       <input type="hidden" name="id" value={p.id} />
                       <button type="submit" className="text-wine">
-                        حذف
+                        {tc("delete")}
                       </button>
                     </form>
                   </div>
@@ -167,7 +175,7 @@ export function PaymentPlan({
           {presetState.error ? (
             <FormError>{presetState.error}</FormError>
           ) : null}
-          <p className="text-xs text-ink-soft">اختر خطة جاهزة:</p>
+          <p className="text-xs text-ink-soft">{t("pickPreset")}</p>
           {PLAN_PRESETS.map((preset) => (
             <form key={preset.id} action={presetAction}>
               <input type="hidden" name="bookingId" value={bookingId} />
@@ -177,14 +185,13 @@ export function PaymentPlan({
                 disabled={presetPending}
                 className="w-full rounded-xl border border-line bg-paper-2 px-3 py-2.5 text-start text-sm font-medium text-ink disabled:opacity-50"
               >
-                {preset.label}
+                {t(`presets.${PRESET_KEY[preset.id] ?? "depositFinal"}`)}
               </button>
             </form>
           ))}
         </div>
       )}
 
-      {/* إضافة قسط */}
       {addOpen ? (
         <AddInstallmentForm
           bookingId={bookingId}
@@ -196,7 +203,7 @@ export function PaymentPlan({
           onClick={() => setAddOpen(true)}
           className="text-xs font-semibold text-gold"
         >
-          + إضافة قسط يدوي
+          {t("addManual")}
         </button>
       )}
     </div>
@@ -204,6 +211,9 @@ export function PaymentPlan({
 }
 
 function RecordForm({ payment, onDone }: { payment: P; onDone: () => void }) {
+  const t = useTranslations("payments.recordForm");
+  const tc = useTranslations("common");
+  const labels = getLabels(useLocale() as Locale).paymentMethod;
   const [state, action, pending] = useActionState(
     recordPaymentAction,
     emptyForm,
@@ -221,7 +231,7 @@ function RecordForm({ payment, onDone }: { payment: P; onDone: () => void }) {
       {state.error ? <FormError>{state.error}</FormError> : null}
       <input type="hidden" name="paymentId" value={payment.id} />
       <div className="grid grid-cols-2 gap-2">
-        <Field label="المبلغ (د.ب)" error={fe.amountBhd}>
+        <Field label={t("amount")} error={fe.amountBhd}>
           <TextInput
             name="amountBhd"
             type="number"
@@ -231,7 +241,7 @@ function RecordForm({ payment, onDone }: { payment: P; onDone: () => void }) {
             required
           />
         </Field>
-        <Field label="التاريخ" error={fe.paidDate}>
+        <Field label={t("date")} error={fe.paidDate}>
           <TextInput
             name="paidDate"
             type="date"
@@ -241,21 +251,21 @@ function RecordForm({ payment, onDone }: { payment: P; onDone: () => void }) {
           />
         </Field>
       </div>
-      <Field label="الطريقة" error={fe.method}>
+      <Field label={t("method")} error={fe.method}>
         <Select name="method" defaultValue="BENEFIT">
-          {Object.entries(PAYMENT_METHOD_LABEL).map(([k, v]) => (
+          {Object.entries(labels).map(([k, v]) => (
             <option key={k} value={k}>
               {v}
             </option>
           ))}
         </Select>
       </Field>
-      <Field label="مرجع/رقم العملية" error={fe.reference}>
+      <Field label={t("reference")} error={fe.reference}>
         <TextInput name="reference" dir="ltr" />
       </Field>
       <div className="flex gap-2">
         <Button type="submit" size="sm" disabled={pending} className="flex-1">
-          {pending ? "…" : "تأكيد"}
+          {pending ? "…" : t("confirm")}
         </Button>
         <Button
           type="button"
@@ -264,7 +274,7 @@ function RecordForm({ payment, onDone }: { payment: P; onDone: () => void }) {
           onClick={onDone}
           className="flex-1"
         >
-          إلغاء
+          {tc("cancel")}
         </Button>
       </div>
     </form>
@@ -278,6 +288,9 @@ function AddInstallmentForm({
   bookingId: string;
   onDone: () => void;
 }) {
+  const t = useTranslations("payments.addForm");
+  const tc = useTranslations("common");
+  const kindLabels = getLabels(useLocale() as Locale).paymentKind;
   const [state, action, pending] = useActionState(
     addInstallmentAction,
     emptyForm,
@@ -295,15 +308,15 @@ function AddInstallmentForm({
       {state.error ? <FormError>{state.error}</FormError> : null}
       <input type="hidden" name="bookingId" value={bookingId} />
       <div className="grid grid-cols-2 gap-2">
-        <Field label="النوع" error={fe.kind}>
+        <Field label={t("kind")} error={fe.kind}>
           <Select name="kind" defaultValue="MILESTONE">
-            <option value="DEPOSIT">عربون</option>
-            <option value="MILESTONE">دفعة وسط</option>
-            <option value="FINAL">تسديد نهائي</option>
-            <option value="OTHER">أخرى</option>
+            <option value="DEPOSIT">{kindLabels.DEPOSIT}</option>
+            <option value="MILESTONE">{kindLabels.MILESTONE}</option>
+            <option value="FINAL">{kindLabels.FINAL}</option>
+            <option value="OTHER">{kindLabels.OTHER}</option>
           </Select>
         </Field>
-        <Field label="المبلغ (د.ب)" error={fe.amountBhd}>
+        <Field label={t("amount")} error={fe.amountBhd}>
           <TextInput
             name="amountBhd"
             type="number"
@@ -313,12 +326,12 @@ function AddInstallmentForm({
           />
         </Field>
       </div>
-      <Field label="تاريخ الاستحقاق" error={fe.dueDate}>
+      <Field label={t("dueDate")} error={fe.dueDate}>
         <TextInput name="dueDate" type="date" dir="ltr" />
       </Field>
       <div className="flex gap-2">
         <Button type="submit" size="sm" disabled={pending} className="flex-1">
-          {pending ? "…" : "إضافة"}
+          {pending ? "…" : t("add")}
         </Button>
         <Button
           type="button"
@@ -327,7 +340,7 @@ function AddInstallmentForm({
           onClick={onDone}
           className="flex-1"
         >
-          إلغاء
+          {tc("cancel")}
         </Button>
       </div>
     </form>

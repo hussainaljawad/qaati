@@ -1,6 +1,7 @@
 "use client";
 
 import { useActionState } from "react";
+import { useTranslations } from "next-intl";
 import { createClientAction, updateClientAction } from "@/app/actions/clients";
 import { emptyForm } from "@/lib/forms";
 import { Button } from "@/components/ui/Button";
@@ -25,6 +26,7 @@ export function ClientForm({
   client?: Client;
   next?: string;
 }) {
+  const t = useTranslations("clients.form");
   const isEdit = Boolean(client);
   const [state, action, pending] = useActionState(
     isEdit ? updateClientAction : createClientAction,
@@ -38,12 +40,12 @@ export function ClientForm({
       {isEdit ? <input type="hidden" name="id" value={client!.id} /> : null}
       {next ? <input type="hidden" name="next" value={next} /> : null}
 
-      <Field label="الاسم" error={fe.name}>
+      <Field label={t("name")} error={fe.name}>
         <TextInput name="name" defaultValue={client?.name ?? ""} required />
       </Field>
 
       <div className="grid grid-cols-2 gap-3">
-        <Field label="الجوال (واتساب)" error={fe.phone}>
+        <Field label={t("phone")} error={fe.phone}>
           <TextInput
             name="phone"
             dir="ltr"
@@ -52,7 +54,7 @@ export function ClientForm({
             required
           />
         </Field>
-        <Field label="جوال آخر" error={fe.altPhone}>
+        <Field label={t("altPhone")} error={fe.altPhone}>
           <TextInput
             name="altPhone"
             dir="ltr"
@@ -62,7 +64,7 @@ export function ClientForm({
         </Field>
       </div>
 
-      <Field label="البريد الإلكتروني" error={fe.email}>
+      <Field label={t("email")} error={fe.email}>
         <TextInput
           name="email"
           type="email"
@@ -71,7 +73,7 @@ export function ClientForm({
         />
       </Field>
 
-      <Field label="الرقم الشخصي" error={fe.nationalId}>
+      <Field label={t("nationalId")} error={fe.nationalId}>
         <TextInput
           name="nationalId"
           dir="ltr"
@@ -79,7 +81,7 @@ export function ClientForm({
         />
       </Field>
 
-      <Field label="تفضيلات العميل" error={fe.preferences}>
+      <Field label={t("preferences")} error={fe.preferences}>
         <Textarea
           name="preferences"
           rows={2}
@@ -87,12 +89,12 @@ export function ClientForm({
         />
       </Field>
 
-      <Field label="ملاحظات" error={fe.notes}>
+      <Field label={t("notes")} error={fe.notes}>
         <Textarea name="notes" rows={2} defaultValue={client?.notes ?? ""} />
       </Field>
 
       <Button type="submit" size="lg" disabled={pending}>
-        {pending ? "…" : isEdit ? "حفظ" : "إضافة العميل"}
+        {pending ? "…" : isEdit ? t("save") : t("add")}
       </Button>
     </form>
   );

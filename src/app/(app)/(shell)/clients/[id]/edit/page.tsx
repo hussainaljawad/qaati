@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
+import { getTranslations } from "next-intl/server";
 import { requireActiveSubscription } from "@/lib/auth/guards";
 import { getClient } from "@/lib/clients/queries";
 import { PageHeader } from "@/components/app/PageHeader";
@@ -12,13 +13,17 @@ export default async function EditClientPage({
 }: PageProps<"/clients/[id]/edit">) {
   const session = await requireActiveSubscription();
   const { id } = await params;
+  const tc = await getTranslations("common");
 
   const client = await getClient(session.organization.id, id);
   if (!client) notFound();
 
   return (
     <>
-      <PageHeader title="تعديل العميل" backHref={`/clients/${client.id}`} />
+      <PageHeader
+        title={`${tc("edit")} · ${client.name}`}
+        backHref={`/clients/${client.id}`}
+      />
       <ClientForm
         client={{
           id: client.id,
