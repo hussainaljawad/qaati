@@ -30,9 +30,9 @@ export function LoginForm({ next }: { next?: string }) {
         <Field label={t("email")}>
           <TextInput
             name="email"
-            type="email"
-            inputMode="email"
-            autoComplete="email"
+            type="text"
+            autoComplete="username"
+            autoCapitalize="none"
             dir="ltr"
             required
           />
