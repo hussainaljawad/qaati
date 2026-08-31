@@ -31,7 +31,8 @@ export const signupSchema = z.object({
 });
 
 export const loginSchema = z.object({
-  email: z.email("بريد إلكتروني غير صحيح").trim().toLowerCase(),
+  // يقبل بريداً إلكترونياً أو اسم مستخدم (للحساب التجريبي admin)
+  email: z.string().trim().toLowerCase().min(1, "اكتب البريد أو اسم المستخدم"),
   password: z.string().min(1, "اكتب كلمة المرور"),
 });
 

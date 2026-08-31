@@ -20,6 +20,7 @@
     "db:reset": "prisma migrate reset",
     "db:studio": "prisma studio",
     "db:local": "node scripts/local-db.mjs",
+    "demo": "node scripts/demo-account.mjs",
     "billing:activate": "node scripts/activate-subscription.ts",
     "test": "vitest run",
     "test:watch": "vitest"
